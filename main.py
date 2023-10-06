@@ -56,23 +56,31 @@ def generatePsfMatrix(size: int, sigma: float) -> np.array:
 
 
 if __name__ == '__main__':
+    # Load image
     image = Image.open(IMGPATH)
     image = np.asarray(image) / 255
     print(image.shape)
 
+    # Generate PSF
     psf = generatePsfMatrix(256, 16)
+    # Generate noise
     noise = np.random.normal(size = image.shape, scale = 1e-2)
+    # Generate blurred image
     conv = sp.signal.convolve(image, psf, "same")
 
+    # Add noise to blurred image
     b = conv + noise
 
+    # Show PSF
     #plt.imshow(psf)
 
+    # Show blurred image, noise and the sum of these
     f, axs = plt.subplots(1, 3)
     axs[0].imshow(conv, cmap="gray", vmin=0, vmax=1)
     axs[1].imshow(noise, cmap="gray")
     axs[2].imshow(b, cmap="gray", vmin=0, vmax=1)
 
+    # Show original image and blurred image
     f, axs = plt.subplots(1,2)
     axs[0].imshow(image, cmap="gray", vmin=0, vmax=1)
     axs[1].imshow(b, cmap="gray", vmin=0, vmax=1)
