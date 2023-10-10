@@ -25,52 +25,20 @@ __license__ = "GPLv3"
 
 from PIL import Image
 import numpy as np
-import scipy as sp
+from numpy.linalg import norm
+from numpy.fft import fft2
+from mathExtras import (sInner, softTreshold, gradLeastSquares, fftConvolve2D,
+                        generatePsfMatrix)
+from solvers import deConvolve2D, deConvolve2DThikonov, FFBS
 from matplotlib import pyplot as plt
 
 IMGPATH = "cameraman.tif"
-
-def generatePsfMatrix(size: int, sigma: float) -> np.array:
-    """
-    Generate a Point Spread Function (PSF) matrix.
-
-    Parameters:
-    - size: Size of the PSF matrix (e.g., size=11 for an 11x11 matrix)
-    - sigma: Standard deviation of the Gaussian PSF
-
-    Returns:
-    - psfMatrix: PSF matrix
-    """
-    # Create a grid of coordinates centered at the PSF matrix
-    x = np.linspace(-size // 2, size // 2, size)
-    y = np.linspace(-size // 2, size // 2, size)
-    xx, yy = np.meshgrid(x, y)
-
-    # Calculate the 2D Gaussian PSF
-    psfMatrix = np.exp(-(xx ** 2 + yy ** 2) / (2 * sigma ** 2))
-
-    # Normalize the PSF matrix to sum to 1
-    psfMatrix /= np.sum(psfMatrix)
-
-    return psfMatrix
-
-def fftConvolve2D(in1, in2):
-    return np.real(np.fft.ifft2(np.fft.fft2(in1) * np.fft.fft2(in2)))
-
-def deConvolve2D(conv, psf, epsilon: float):
-    return np.real(np.fft.ifft2(np.fft.fft2(conv) / np.clip(np.fft.fft2(psf),epsilon, None) ))
-
-def deConvolve2DThikonov(conv, psf, alpha):
-    psfFFT = np.fft.fft2(psf)
-    psfFFTC = np.conjugate(psfFFT)
-    convFFT = np.fft.fft2(conv)
-    return np.real(np.fft.ifft2( psfFFTC*convFFT/(psfFFTC*psfFFT + alpha) ) )
 
 if __name__ == '__main__':
     # Load image
     image = Image.open(IMGPATH)
     image = np.asarray(image) / 255
-    n = image.shape[0];
+    n = image.shape[0]
     print(image.shape)
 
     # Generate PSF
@@ -78,17 +46,32 @@ if __name__ == '__main__':
     # Center PSF
     psf = np.roll(psf, (-psf.shape[0] // 2, -psf.shape[0] // 2), axis=(0, 1))
     # Generate noise
-    noise = np.random.normal(size = image.shape, scale = 1e-4)
+    noise = np.random.normal(size=image.shape, scale=1e-4)
     # Generate blurred image
     conv = fftConvolve2D(image, psf)
 
     # Add noise to blurred image
-    b = np.clip(conv + noise,0,1)
+    b = np.clip(conv + noise, 0, 1)
+    # Simple treshold deblur
     imRec = deConvolve2D(b, psf, 1e-3)
-    imRecThikonov = deConvolve2DThikonov(b, psf, 1e-6)
+    # Thikonov deblur
+    imRecThikonov = deConvolve2DThikonov(b, psf, 1e-7)
+
+    # FISTA deblur
+    bFFT = fft2(b)
+    psfFFT = fft2(psf)
+    psfFFTC = np.conjugate(psfFFT)
+    imRecThikonov1 = FFBS(imRecThikonov,
+                          gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT,
+                                                           psfFFTC),
+                          proxg=lambda alpha, x: softTreshold(alpha * 0, x),
+                          f=lambda x: sInner(
+                              (fftConvolve2D(x, psf) - b).ravel()),
+                          g=lambda x: 0 * norm(x),
+                          stepSize=.6, maxit=int(1e3), tol=1e-16)
 
     # Show PSF
-    #plt.imshow(psf)
+    # plt.imshow(psf)
 
     # Show blurred image, noise and the sum of these
     f, axs = plt.subplots(1, 3)
@@ -97,12 +80,15 @@ if __name__ == '__main__':
     axs[2].imshow(b, cmap="gray", vmin=0, vmax=1)
 
     # Show original image and blurred image
-    f, axs = plt.subplots(1,2)
+    f, axs = plt.subplots(1, 2)
     axs[0].imshow(image, cmap="gray", vmin=0, vmax=1)
     axs[1].imshow(b, cmap="gray", vmin=0, vmax=1)
-    f, axs = plt.subplots(1, 3)
-    axs[0].imshow(image, cmap="gray", vmin=0, vmax=1)
-    axs[1].imshow(imRec, cmap="gray", vmin=0, vmax=1)
-    axs[2].imshow(imRecThikonov, cmap="gray", vmin=0, vmax=1)
+
+    # Show results of deblurring methods
+    f, axs = plt.subplots(2, 2)
+    axs[0][0].imshow(image, cmap="gray", vmin=0, vmax=1)
+    axs[0][1].imshow(imRec, cmap="gray", vmin=0, vmax=1)
+    axs[1][0].imshow(imRecThikonov, cmap="gray", vmin=0, vmax=1)
+    axs[1][1].imshow(imRecThikonov1, cmap="gray", vmin=0, vmax=1)
 
     plt.show()
