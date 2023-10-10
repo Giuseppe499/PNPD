@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 __author__ = "Giuseppe Scarlato"
-__contact__ = "giuseppe499[at]live.com"
+__contact__ = "giuseppe499[at]live.it"
 __copyright__ = "Copyright 2023, Giuseppe Scarlato"
 __date__ = "2023/10/06"
 __license__ = "GPLv3"
