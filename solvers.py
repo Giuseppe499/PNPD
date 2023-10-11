@@ -43,12 +43,15 @@ def FBS(x0, gradf: Callable, proxg: Callable, f: Callable, g: Callable,
     Approximate argmin_{x \in R^d} f(x) + g(x) where f is differentiable and
     the proximity operator of g is known.
     """
+    rreList = []
     val0 = f(x0) + g(x0)
     for i in range(maxit):
         x1 = proxg(stepSize, x0 - stepSize * gradf(x0))
         val1 = f(x1) + g(x1)
+        rre = norm(xOrig - x1) / norm(xOrig)
+        rreList.append(rre)
         print("Iteration: " + str(i), end="")
-        print(", RRE: " + str(norm(xOrig - x1) / norm(xOrig)), end="")
+        print(", RRE: " + str(rre), end="")
         print(", f(x1) + g(x1): " + str(val1), end="")
         print(", delta val: " + str(val1 - val1))
         if val0 - val1 < tol:
@@ -57,7 +60,7 @@ def FBS(x0, gradf: Callable, proxg: Callable, f: Callable, g: Callable,
         xlast = x0
         x0 = x1
     print("Exceded maxit")
-    return x1
+    return x1, rreList
 
 
 def FFBS(x0, gradf: Callable, proxg: Callable, f: Callable, g: Callable,
