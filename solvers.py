@@ -53,7 +53,7 @@ def FBS(x0, gradf: Callable, proxg: Callable, f: Callable, g: Callable,
         print("Iteration: " + str(i), end="")
         print(", RRE: " + str(rre), end="")
         print(", f(x1) + g(x1): " + str(val1), end="")
-        print(", delta val: " + str(val1 - val1))
+        print(", delta val: " + str(val1 - val0))
         if val0 - val1 < tol:
             print(val0 - val1)
             return x1
@@ -83,8 +83,8 @@ def FFBS(x0, gradf: Callable, proxg: Callable, f: Callable, g: Callable,
         rreList.append(rre)
         print("Iteration: " + str(i), end="")
         print(", RRE: " + str(rre), end="")
-        print(", f(x1) + g(x1): " + str(val1), end="")
-        print(", delta val: " + str(val1 - val1))
+        print(", f(x2) + g(x2): " + str(val2), end="")
+        print(", delta val: " + str(val2 - val1))
 
         if np.abs(val1 - val2) < tol:
             break
