@@ -76,10 +76,10 @@ def FFBS(x0, gradf: Callable, proxg: Callable, f: Callable, g: Callable,
         y = x1 + (t0 - 1) / t * (x1 - x0)
         x2 = proxg(stepSize, y - stepSize * gradf(y))
         val2 = f(x2) + g(x2)
-        rre = str(norm(xOrig - x2))
+        rre = norm(xOrig - x2)
         rreList.append(rre)
         print("Iteration: " + str(i), end="")
-        print(", RRE: " + rre, end="")
+        print(", RRE: " + str(rre), end="")
         print(", f(x1) + g(x1): " + str(val1), end="")
         print(", delta val: " + str(val1 - val1))
 
