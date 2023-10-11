@@ -31,7 +31,7 @@ def softTreshold(alpha, x: np.array):
 
 def gradLeastSquares(x, bFFT, psfFFT, psfFFTC):
     xFFT = fft2(x)
-    return 2 * np.real(ifft2(psfFFTC * (psfFFT * xFFT - bFFT)))
+    return np.real(ifft2(psfFFTC * (psfFFT * xFFT - bFFT)))
 
 
 def fftConvolve2D(in1, in2):
