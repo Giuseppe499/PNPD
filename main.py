@@ -45,36 +45,39 @@ if __name__ == '__main__':
     print(image.shape)
 
     # Generate PSF
-    psf = generatePsfMatrix(n, 8)
+    psf = generatePsfMatrix(n, 4)
     # plt.imshow(psf)
     # plt.show()
     # Center PSF
     psf = np.roll(psf, (-psf.shape[0] // 2, -psf.shape[0] // 2), axis=(0, 1))
     # Generate noise
     noise = np.random.normal(size=image.shape)
-    noise *= 0.1 * norm(image) / norm(noise)
+    noise *= 0.01 * norm(image) / norm(noise)
     # Generate blurred image
     conv = fftConvolve2D(image, psf)
 
     # Add noise to blurred image
     b = np.clip(conv + noise, 0, 1)
     # Simple treshold deblur
-    imRec = deConvolve2D(b, psf, 1e-1)
+    imRec = deConvolve2D(b, psf, 5e-2)
     # Thikonov deblur
-    imRecThikonov = deConvolve2DThikonov(b, psf, 1e-3)
+    imRecThikonov = deConvolve2DThikonov(b, psf, 5e-4)
 
     # FISTA deblur
     bFFT = fft2(b)
     psfFFT = fft2(psf)
     psfFFTC = np.conjugate(psfFFT)
-    imRecThikonov1 = FBS(b,
-                         gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT,
-                                                          psfFFTC),
-                         proxg=lambda alpha, x: softTreshold(alpha * 0, x),
-                         f=lambda x: sInner(
-                             (fftConvolve2D(x, psf) - b).ravel()),
-                         g=lambda x: 0 * norm(x),
-                         stepSize=1, maxit=int(1e3), tol=1e-4, xOrig=image)
+    imRecNorm1, rreList = FFBS(b,
+                               gradf=lambda x: gradLeastSquares(x, bFFT,
+                                                                psfFFT,
+                                                                psfFFTC),
+                               proxg=lambda alpha, x: softTreshold(
+                                   alpha * 5e-4, x),
+                               f=lambda x: sInner(
+                                   (fftConvolve2D(x, psf) - b).ravel()),
+                               g=lambda x: 5e-4 * norm(x),
+                               stepSize=1, maxit=int(1e2), tol=1e-10,
+                               xOrig=image)
 
     # Show PSF
     # plt.imshow(psf)
@@ -95,6 +98,10 @@ if __name__ == '__main__':
     axs[0][0].imshow(image, cmap="gray", vmin=0, vmax=1)
     axs[0][1].imshow(imRec, cmap="gray", vmin=0, vmax=1)
     axs[1][0].imshow(imRecThikonov, cmap="gray", vmin=0, vmax=1)
-    axs[1][1].imshow(imRecThikonov1, cmap="gray", vmin=0, vmax=1)
+    axs[1][1].imshow(imRecNorm1, cmap="gray", vmin=0, vmax=1)
+
+    # Show RRE for FISTA
+    plt.figure()
+    plt.plot(rreList)
 
     plt.show()
