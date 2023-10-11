@@ -22,7 +22,7 @@ from typing import Callable
 import numpy as np
 from numpy.linalg import norm
 from numpy.fft import fft2, ifft2
-from mathExtras import sInner
+from mathExtras import softTreshold
 
 
 def deConvolve2D(conv, psf, epsilon: float):
@@ -97,3 +97,16 @@ def FFBS(x0, gradf: Callable, proxg: Callable, f: Callable, g: Callable,
         t0 = t
     print("Exceded maxit")
     return x2, rreList
+
+
+def FISTA(x0, gradf: Callable, f: Callable, tau: float, stepSize: float,
+          xOrig, t0: float = 1, tol: float = 1e-4, maxit: int = 100):
+    """
+    Fast Iterative Soft Tresholding Algorithm
+    Approximate argmin_{x \in R^d} f(x) + tau*|x|_1 where f is
+    differentiable
+    """
+    return FFBS(x0, gradf=gradf,
+                proxg=lambda alpha, x: softTreshold(alpha * tau, x),
+                f=f, g=lambda x: tau * norm(x), stepSize=stepSize,
+                maxit=maxit, tol=tol, xOrig=xOrig)

@@ -29,7 +29,7 @@ from numpy.linalg import norm
 from numpy.fft import fft2
 from mathExtras import (sInner, softTreshold, gradLeastSquares, fftConvolve2D,
                         generatePsfMatrix)
-from solvers import deConvolve2D, deConvolve2DThikonov, FFBS, FBS
+from solvers import deConvolve2D, deConvolve2DThikonov, FISTA
 from matplotlib import pyplot as plt
 
 IMGPATH = "cameraman.tif"
@@ -67,17 +67,14 @@ if __name__ == '__main__':
     bFFT = fft2(b)
     psfFFT = fft2(psf)
     psfFFTC = np.conjugate(psfFFT)
-    imRecNorm1, rreList = FFBS(b,
-                               gradf=lambda x: gradLeastSquares(x, bFFT,
-                                                                psfFFT,
-                                                                psfFFTC),
-                               proxg=lambda alpha, x: softTreshold(
-                                   alpha * 5e-4, x),
-                               f=lambda x: sInner(
-                                   (fftConvolve2D(x, psf) - b).ravel()),
-                               g=lambda x: 5e-4 * norm(x),
-                               stepSize=1, maxit=int(1e2), tol=1e-10,
-                               xOrig=image)
+    imRecNorm1, rreList = FISTA(x0=b, tau = 5e-4,
+                                gradf=lambda x: gradLeastSquares(x, bFFT,
+                                                                 psfFFT,
+                                                                 psfFFTC),
+                                f=lambda x: sInner(
+                                    (fftConvolve2D(x, psf) - b).ravel()),
+                                stepSize=1, maxit=int(1e2), tol=1e-10,
+                                xOrig=image)
 
     # Show PSF
     # plt.imshow(psf)
