@@ -73,7 +73,7 @@ def generatePsfMatrix(size: int, sigma: float) -> np.array:
     Generate a Point Spread Function (PSF) matrix.
 
     Parameters:
-    - size: Size of the PSF matrix (e.g., size=11 for an 11x11 matrix)
+    - size: Size of the PSF matrix (e.g., size=11 for a 11x11 matrix)
     - sigma: Standard deviation of the Gaussian PSF
 
     Returns:
