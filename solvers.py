@@ -55,9 +55,7 @@ def FBS(x0, gradf: Callable, proxg: Callable, f: Callable, g: Callable,
         print(", f(x1) + g(x1): " + str(val1), end="")
         print(", delta val: " + str(val1 - val0))
         if val0 - val1 < tol:
-            print(val0 - val1)
-            return x1
-        xlast = x0
+            break
         x0 = x1
     print("Exceded maxit")
     return x1, rreList
@@ -110,3 +108,39 @@ def FISTA(x0, gradf: Callable, f: Callable, tau: float, stepSize: float,
                 proxg=lambda alpha, x: softTreshold(alpha * tau, x),
                 f=f, g=lambda x: tau * norm(x), stepSize=stepSize,
                 maxit=maxit, tol=tol, xOrig=xOrig)
+
+
+def NPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable, mulWT: Callable,
+        f: Callable, h: Callable, pStep: float, dStep: float, xOrig,
+        kMax: int = 1, t0: float = 1, tol: float = 1e-4, maxit: int = 100):
+    """
+    Nested Primal Dual
+    Approximate argmin_{x \in R^d} f(x) + h(Wx) where f is differentiable and
+    the proximity operator of h* (Fenchel conjugate of h) is known.
+    """
+    rreList = []
+    val0 = f(x0) + h(mulW(x0))
+    y0 = proxhs(dStep/pStep, dStep / pStep * mulW(x0))
+    for i in range(maxit):
+        # Primal Dual Iteration
+        xSum = np.zeros(x0.shape)
+        for k in range(kMax):
+            x1 = x0 - pStep * gradf(x0) - pStep * mulWT(y0)
+            xSum += x1
+            y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x1))
+            y0 = y1
+        x1 = x0 - pStep * gradf(x0) - pStep * mulWT(y0)
+        xSum += x1
+        x1 = xSum / (kMax+1)
+        val1 = f(x1) + h(mulW(x1))
+        rre = norm(xOrig - x1) / norm(xOrig)
+        rreList.append(rre)
+        print("Iteration: " + str(i), end="")
+        print(", RRE: " + str(rre), end="")
+        print(", f(x1) + g(x1): " + str(val1), end="")
+        print(", delta val: " + str(val1 - val0))
+        if abs(val0 - val1) < tol:
+            break
+        x0 = x1
+    print("Exceded maxit")
+    return x1, rreList

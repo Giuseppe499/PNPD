@@ -55,6 +55,14 @@ def div2D(dxdy: np.array):
     fy[:, -1] = dy[:, -2]
     return fx + fy
 
+def proxhsTV(lam: float, dxdy: np.array):
+    dx = dxdy[0, :, :]
+    dy = dxdy[1, :, :]
+    factor = np.sqrt(dx*dx + dy*dy)
+    factor = np.maximum(factor/lam, 1)
+    factor = np.stack((factor, factor))
+    return dxdy / factor
+
 
 def fftConvolve2D(in1, in2):
     return np.real(ifft2(fft2(in1) * fft2(in2)))
