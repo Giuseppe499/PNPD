@@ -74,7 +74,7 @@ imRecNorm1, rreListNorm1 = FISTA(x0=b, tau=5e-4,
                                                                   psfFFTC),
                                  f=lambda x: sInner(
                                      (fftConvolve2D(x, psf) - b).ravel()),
-                                 stepSize=1, maxit=int(1e0), tol=1e-4,
+                                 stepSize=1, maxit=int(2e2), tol=1e-4,
                                  xOrig=image)
 
 lam = 5e-5
@@ -88,7 +88,7 @@ imRecTV, rreListTV = NPD(x0=b,
                          f=lambda x: sInner(
                              (fftConvolve2D(x, psf) - b).ravel()),
                          h=lambda y: lam * norm(y.ravel(), 1),
-                         pStep=2, dStep=1 / 8, maxit=int(1e3), tol=1e-4,
+                         pStep=1, dStep=1 / 8, maxit=int(2e2), tol=1e-4,
                          xOrig=image)
 
 # Show PSF
