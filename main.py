@@ -29,8 +29,8 @@ from numpy.linalg import norm
 from numpy.fft import fft2
 from mathExtras import (sInner, softTreshold, gradLeastSquares,
                         grad2D, div2D, proxhsTV, fftConvolve2D,
-                        generatePsfMatrix)
-from solvers import deConvolve2D, deConvolve2DThikonov, FISTA, NPD
+                        generatePsfMatrix, mulPInLeastSquares)
+from solvers import deConvolve2D, deConvolve2DThikonov, FISTA, NPD, NPDIT
 from matplotlib import pyplot as plt
 
 IMGPATH = "cameraman.tif"
@@ -68,6 +68,7 @@ imRecThikonov = deConvolve2DThikonov(b, psf, 5e-4)
 bFFT = fft2(b)
 psfFFT = fft2(psf)
 psfFFTC = np.conjugate(psfFFT)
+psfAbsSq = psfFFTC * psfFFT
 imRecNorm1, rreListNorm1 = FISTA(x0=b, tau=5e-4,
                                  gradf=lambda x: gradLeastSquares(x, bFFT,
                                                                   psfFFT,
@@ -91,6 +92,21 @@ imRecTV, rreListTV = NPD(x0=b,
                          pStep=1, dStep=1 / 8, maxit=int(2e2), tol=1e-4,
                          xOrig=image)
 
+imRecTVNPDIT, rreListTVNPDIT = NPDIT(x0=b,
+                                     gradf=lambda x: gradLeastSquares(x, bFFT,
+                                                                      psfFFT,
+                                                                      psfFFTC),
+                                     proxhs=lambda alpha, x: proxhsTV(lam, x),
+                                     mulW=grad2D,
+                                     mulWT=div2D,
+                                     mulPIn=lambda mu, x: mulPInLeastSquares(
+                                         mu, x, psfAbsSq),
+                                     f=lambda x: sInner(
+                                         (fftConvolve2D(x, psf) - b).ravel()),
+                                     h=lambda y: lam * norm(y.ravel(), 1),
+                                     pStep=1, dStep=1 / 8, PReg=1e-1,
+                                     maxit=int(2e2), tol=1e-4, xOrig=image)
+
 # Show PSF
 # plt.imshow(psf)
 
@@ -112,11 +128,13 @@ axs[0][1].imshow(imRec, cmap="gray", vmin=0, vmax=1)
 axs[1][0].imshow(imRecThikonov, cmap="gray", vmin=0, vmax=1)
 axs[1][1].imshow(imRecNorm1, cmap="gray", vmin=0, vmax=1)
 
-plt.figure()
-plt.imshow(imRecTV, cmap="gray", vmin=0, vmax=1)
+f, axs = plt.subplots(2, 2)
+axs[0][0].imshow(imRecTV, cmap="gray", vmin=0, vmax=1)
+axs[0][1].imshow(imRecTVNPDIT, cmap="gray", vmin=0, vmax=1)
 
 # Show RRE for FISTA
 plt.figure()
 plt.plot(rreListTV)
+plt.plot(rreListTVNPDIT)
 
 plt.show()

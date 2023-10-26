@@ -33,6 +33,8 @@ def gradLeastSquares(x, bFFT, psfFFT, psfFFTC):
     xFFT = fft2(x)
     return np.real(ifft2(psfFFTC * (psfFFT * xFFT - bFFT)))
 
+def mulPInLeastSquares(mu, x, psfAbsSq):
+    return np.real(ifft2(fft2(x) / (psfAbsSq + mu)))
 
 def grad2D(m: np.array):
     dx = np.roll(m, -1, axis=0) - m

@@ -134,7 +134,50 @@ def NPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable, mulWT: Callable,
             y0 = y1
         x2 = xBar - pStep * gradf(xBar) - pStep * mulWT(y0)
         x1Sum += x2
-        x2 = x1Sum / (kMax+1)
+        x2 = x1Sum / (kMax + 1)
+        val2 = f(x2) + h(mulW(x2))
+        rre = norm(xOrig - x2) / norm(xOrig)
+        rreList.append(rre)
+        print("Iteration: " + str(i), end="")
+        print(", RRE: " + str(rre), end="")
+        print(", f(x1) + g(x1): " + str(val2), end="")
+        print(", delta val: " + str(val2 - val1))
+        if abs(val1 - val2) < tol:
+            break
+        x0 = x1
+        x1 = x2
+        val1 = val2
+        t0 = t
+    print("Exceded maxit")
+    return x2, rreList
+
+
+def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
+          mulWT: Callable, mulPIn: Callable, f: Callable, h: Callable,
+          pStep: float, dStep: float, PReg: float, xOrig, kMax: int = 1,
+          t0: float = 0, tol: float = 1e-4, maxit: int = 100):
+    """
+    Nested Primal Dual (FISTA-like algorithm)
+    Approximate argmin_{x \in R^d} f(x) + h(Wx) where f is differentiable and
+    the proximity operator of h* (Fenchel conjugate of h) is known.
+    """
+    rreList = []
+    x1 = x0
+    val1 = f(x1) + h(mulW(x1))
+    y0 = proxhs(dStep / pStep, dStep / pStep * mulW(x1))
+    for i in range(maxit):
+        t = .5 + .5 * np.sqrt(1 + 4 * t0 * t0)
+        xBar = x1 + (t0 - 1) / t * (x1 - x0)
+        # Primal Dual Iteration
+        x1Sum = np.zeros(x1.shape)
+        for k in range(kMax):
+            x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulWT(y0)
+            x1Sum += x2
+            y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
+            y0 = y1
+        x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulWT(y0)
+        x1Sum += x2
+        x2 = x1Sum / (kMax + 1)
         val2 = f(x2) + h(mulW(x2))
         rre = norm(xOrig - x2) / norm(xOrig)
         rreList.append(rre)
