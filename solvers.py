@@ -55,9 +55,9 @@ def FBS(x0, gradf: Callable, proxg: Callable, f: Callable, g: Callable,
         print(", f(x1) + g(x1): " + str(val1), end="")
         print(", delta val: " + str(val1 - val0))
         if val0 - val1 < tol:
+            print("tol reached")
             break
         x0 = x1
-    print("Exceded maxit")
     return x1, rreList
 
 
@@ -85,6 +85,7 @@ def FFBS(x0, gradf: Callable, proxg: Callable, f: Callable, g: Callable,
         print(", delta val: " + str(val2 - val1))
 
         if np.abs(val1 - val2) < tol:
+            print("tol reached")
             break
         # plt.imshow(x, cmap="gray", vmin=0, vmax=1)
         # plt.draw()
@@ -93,7 +94,6 @@ def FFBS(x0, gradf: Callable, proxg: Callable, f: Callable, g: Callable,
         x1 = x2
         val1 = val2
         t0 = t
-    print("Exceded maxit")
     return x2, rreList
 
 
@@ -143,12 +143,12 @@ def NPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable, mulWT: Callable,
         print(", f(x1) + g(x1): " + str(val2), end="")
         print(", delta val: " + str(val2 - val1))
         if abs(val1 - val2) < tol:
+            print("tol reached")
             break
         x0 = x1
         x1 = x2
         val1 = val2
         t0 = t
-    print("Exceded maxit")
     return x2, rreList
 
 
@@ -186,10 +186,10 @@ def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
         print(", f(x1) + g(x1): " + str(val2), end="")
         print(", delta val: " + str(val2 - val1))
         if abs(val1 - val2) < tol:
+            print("tol reached")
             break
         x0 = x1
         x1 = x2
         val1 = val2
         t0 = t
-    print("Exceded maxit")
     return x2, rreList
