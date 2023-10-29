@@ -22,7 +22,6 @@ from typing import Callable
 import numpy as np
 from numpy.linalg import norm
 from numpy.fft import fft2, ifft2
-from mathExtras import softTreshold
 
 
 def deConvolve2D(conv, psf, epsilon: float):
@@ -34,80 +33,6 @@ def deConvolve2DThikonov(conv, psf, alpha):
     psfFFTC = np.conjugate(psfFFT)
     convFFT = fft2(conv)
     return np.real(ifft2(psfFFTC * convFFT / (psfFFTC * psfFFT + alpha)))
-
-
-def FBS(x0, gradf: Callable, proxg: Callable, f: Callable, g: Callable,
-        stepSize: float, xOrig, tol: float = 1e-4, maxit: int = 100):
-    """
-    Forward-Backward Splitting
-    Approximate argmin_{x \in R^d} f(x) + g(x) where f is differentiable and
-    the proximity operator of g is known.
-    """
-    rreList = []
-    val0 = f(x0) + g(x0)
-    for i in range(maxit):
-        x1 = proxg(stepSize, x0 - stepSize * gradf(x0))
-        val1 = f(x1) + g(x1)
-        rre = norm(xOrig - x1) / norm(xOrig)
-        rreList.append(rre)
-        print("Iteration: " + str(i), end="")
-        print(", RRE: " + str(rre), end="")
-        print(", f(x1) + g(x1): " + str(val1), end="")
-        print(", delta val: " + str(val1 - val0))
-        if val0 - val1 < tol:
-            print("tol reached")
-            break
-        x0 = x1
-    return x1, rreList
-
-
-def FFBS(x0, gradf: Callable, proxg: Callable, f: Callable, g: Callable,
-         stepSize: float, xOrig, t0: float = 1, tol: float = 1e-4, maxit: int
-         = 100):
-    """
-    Fast Forward-Backward Splitting (FISTA-like algorithm)
-    Approximate argmin_{x \in R^d} f(x) + g(x) where f is differentiable and
-    the proximity operator of g is known.
-    """
-    rreList = []
-    x1 = proxg(stepSize, x0 - stepSize * gradf(x0))
-    val1 = f(x1) + g(x1)
-    for i in range(maxit):
-        t = .5 + .5 * np.sqrt(1 + 4 * t0 * t0)
-        y = x1 + (t0 - 1) / t * (x1 - x0)
-        x2 = proxg(stepSize, y - stepSize * gradf(y))
-        val2 = f(x2) + g(x2)
-        rre = norm(xOrig - x2)
-        rreList.append(rre)
-        print("Iteration: " + str(i), end="")
-        print(", RRE: " + str(rre), end="")
-        print(", f(x2) + g(x2): " + str(val2), end="")
-        print(", delta val: " + str(val2 - val1))
-
-        if np.abs(val1 - val2) < tol:
-            print("tol reached")
-            break
-        # plt.imshow(x, cmap="gray", vmin=0, vmax=1)
-        # plt.draw()
-        # plt.pause(0.001)
-        x0 = x1
-        x1 = x2
-        val1 = val2
-        t0 = t
-    return x2, rreList
-
-
-def FISTA(x0, gradf: Callable, f: Callable, tau: float, stepSize: float,
-          xOrig, t0: float = 1, tol: float = 1e-4, maxit: int = 100):
-    """
-    Fast Iterative Soft Tresholding Algorithm
-    Approximate argmin_{x \in R^d} f(x) + tau*|x|_1 where f is
-    differentiable
-    """
-    return FFBS(x0, gradf=gradf,
-                proxg=lambda alpha, x: softTreshold(alpha * tau, x),
-                f=f, g=lambda x: tau * norm(x), stepSize=stepSize,
-                maxit=maxit, tol=tol, xOrig=xOrig)
 
 
 def NPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable, mulWT: Callable,
