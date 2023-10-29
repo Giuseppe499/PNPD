@@ -33,8 +33,21 @@ def gradLeastSquares(x, bFFT, psfFFT, psfFFTC):
     xFFT = fft2(x)
     return np.real(ifft2(psfFFTC * (psfFFT * xFFT - bFFT)))
 
+def gradLeastSquaresRGB(x, bFFT, psfFFT, psfFFTC):
+    grad = np.zeros(x.shape)
+    for i in range(3):
+        grad[:,:,i] = gradLeastSquares(x[:,:,i], bFFT[:,:,i], psfFFT, psfFFTC)
+    return grad
+    
+
 def mulPInLeastSquares(mu, x, psfAbsSq):
     return np.real(ifft2(fft2(x) / (psfAbsSq + mu)))
+
+def mulPInLeastSquaresRGB(mu, x, psfAbsSq):
+    mul = np.zeros(x.shape)
+    for i in range(3):
+        mul[:,:,i] = mulPInLeastSquares(mu, x[:,:,i], psfAbsSq)
+    return mul
 
 def grad2D(m: np.array):
     dx = np.roll(m, -1, axis=0) - m
@@ -45,6 +58,8 @@ def grad2D(m: np.array):
 
     return np.stack((dx, dy))
 
+def grad2Drgb(m: np.array):
+    return np.stack([grad2D(m[:,:,i]) for i in range(3)], axis=-1)
 
 def div2D(dxdy: np.array):
     dx = dxdy[0, :, :]
@@ -57,6 +72,9 @@ def div2D(dxdy: np.array):
     fy[:, -1] = dy[:, -2]
     return fx + fy
 
+def div2Drgb(dxdy: np.array):
+    return np.stack([div2D(dxdy[:,:,:,i]) for i in range(3)], axis=-1)
+
 def proxhsTV(lam: float, dxdy: np.array):
     dx = dxdy[0, :, :]
     dy = dxdy[1, :, :]
@@ -65,9 +83,17 @@ def proxhsTV(lam: float, dxdy: np.array):
     factor = np.stack((factor, factor))
     return dxdy / factor
 
+def proxhsTVrgb(lam: float, dxdy: np.array):
+    for i in range(3):
+        dxdy[:,:,:,i] = proxhsTV(lam, dxdy[:,:,:,i])
+    return dxdy
+
 
 def fftConvolve2D(in1, in2):
     return np.real(ifft2(fft2(in1) * fft2(in2)))
+
+def fftConvolve2Drgb(in1, in2):
+    return np.stack([fftConvolve2D(in1[:,:,i], in2) for i in range(3)], axis=-1)
 
 
 def generatePsfMatrix(size: int, sigma: float) -> np.array:
@@ -93,3 +119,30 @@ def generatePsfMatrix(size: int, sigma: float) -> np.array:
     psfMatrix /= np.sum(psfMatrix)
 
     return psfMatrix
+
+def centerCrop(image, target_size=(256, 256)):
+    h, w, _ = image.shape
+    th, tw = target_size
+
+    # Calculate the starting point for the crop
+    i = int(round((h - th) / 2.))
+    j = int(round((w - tw) / 2.))
+
+    # Perform the crop
+    cropped_image = image[i:i+th, j:j+tw]
+
+    return cropped_image
+
+def padWithZeros(image, target_size=(256, 256)):
+    h, w, _ = image.shape
+    th, tw = target_size
+
+    # Calculate the starting point for the crop
+    i = int(round((th - h) / 2.))
+    j = int(round((tw - w) / 2.))
+
+    # Perform the crop
+    padded_image = np.zeros((th, tw, 3))
+    padded_image[i:i+h, j:j+w] = image
+
+    return padded_image
