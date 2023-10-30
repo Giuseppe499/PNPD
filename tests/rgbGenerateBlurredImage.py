@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from PIL import Image
 import numpy as np
 from numpy.linalg import norm
-from mathExtras import fftConvolve2D, generatePsfMatrix, centerCrop
+from mathExtras import fftConvolve2D, generatePsfMatrix, centerCrop, sInner
 
 IMGPATH = "barn.jpg"
 
@@ -38,6 +38,7 @@ if __name__ == '__main__':
     # Generate noise
     noise = np.random.normal(size=image.shape)
     noise *= 0.04 * norm(image) / norm(noise)
+    noiseNormSqd = sInner(noise.ravel())
     # Generate blurred image
     conv = np.zeros(image.shape)
     for i in range(3):
@@ -46,4 +47,4 @@ if __name__ == '__main__':
     # Add noise to blurred image
     b = np.clip(conv + noise, 0, 1)
 
-    np.savez('./rgbBlurred.npz', b=b, psf=psf, image=image)
+    np.savez('./rgbBlurred.npz', b=b, psf=psf, image=image, noiseNormSqd=noiseNormSqd)

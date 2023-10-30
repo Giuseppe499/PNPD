@@ -29,10 +29,11 @@ if __name__ == '__main__':
         b = data['b']
         psf = data['psf']
         image = data['image']
+        noiseNormSqd = data['noiseNormSqd']
 
     maxIt = 200  # Maximum number of iterations
-    tol = 1e-4  # Tolerance
-    lam = 5e-5  # TV regularization parameter
+    tol = noiseNormSqd  # Tolerance
+    lam = 5e-7  # TV regularization parameter
     pStep = 1  # Primal step length
     dStep = 1 / 8  # Dual step length
 
@@ -49,7 +50,7 @@ if __name__ == '__main__':
                          f=lambda x: sInner(
                              (fftConvolve2D(x, psf) - b).ravel()),
                          h=lambda y: lam * norm(y.ravel(), 1),
-                         pStep=pStep, dStep=dStep, maxit=maxIt, tol=tol,
+                         pStep=pStep, dStep=dStep, maxit=maxIt, tol=tol, dp = .957,
                          xOrig=image)
 
     np.savez("./grayscaleNPD.npz", imRec=imRec, rreList=rreList)

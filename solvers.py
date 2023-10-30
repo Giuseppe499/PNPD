@@ -37,7 +37,7 @@ def deConvolve2DThikonov(conv, psf, alpha):
 
 def NPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable, mulWT: Callable,
         f: Callable, h: Callable, pStep: float, dStep: float, xOrig,
-        kMax: int = 1, t0: float = 0, tol: float = 1e-4, maxit: int = 100):
+        kMax: int = 1, t0: float = 0, tol: float = 1e-4, dp: float = 1, maxit: int = 100):
     """
     Nested Primal Dual (FISTA-like algorithm)
     Approximate argmin_{x \in R^d} f(x) + h(Wx) where f is differentiable and
@@ -66,8 +66,8 @@ def NPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable, mulWT: Callable,
         print("Iteration: " + str(i), end="")
         print(", RRE: " + str(rre), end="")
         print(", f(x1) + g(x1): " + str(val2), end="")
-        print(", delta val: " + str(val2 - val1))
-        if abs(val1 - val2) < tol:
+        print(", f(x2): " + str(f(x2)))
+        if f(x2) < dp*tol:
             print("tol reached")
             break
         x0 = x1
@@ -80,7 +80,7 @@ def NPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable, mulWT: Callable,
 def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
           mulWT: Callable, mulPIn: Callable, f: Callable, h: Callable,
           pStep: float, dStep: float, PReg: float, xOrig, kMax: int = 1,
-          t0: float = 0, tol: float = 1e-4, maxit: int = 100):
+          t0: float = 0, tol: float = 1e-4, dp: float = 1, maxit: int = 100):
     """
     Nested Primal Dual (FISTA-like algorithm)
     Approximate argmin_{x \in R^d} f(x) + h(Wx) where f is differentiable and
@@ -109,8 +109,8 @@ def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
         print("Iteration: " + str(i), end="")
         print(", RRE: " + str(rre), end="")
         print(", f(x1) + g(x1): " + str(val2), end="")
-        print(", delta val: " + str(val2 - val1))
-        if abs(val1 - val2) < tol:
+        print(", f(x2): " + str(f(x2)))
+        if f(x2) < dp*tol:
             print("tol reached")
             break
         x0 = x1
