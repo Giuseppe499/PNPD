@@ -34,6 +34,13 @@ def deConvolve2DThikonov(conv, psf, alpha):
     convFFT = fft2(conv)
     return np.real(ifft2(psfFFTC * convFFT / (psfFFTC * psfFFT + alpha)))
 
+def deConvolve2DThikonovPlusEstimate(conv, psf, estimate, alpha):
+    psfFFT = fft2(psf)
+    psfFFTC = np.conjugate(psfFFT)
+    estimateFFT = fft2(estimate)
+    convFFT = fft2(conv)
+    return np.real(ifft2((psfFFTC * convFFT + alpha*estimateFFT) / (psfFFTC * psfFFT + alpha)))
+
 
 def NPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable, mulWT: Callable,
         f: Callable, h: Callable, pStep: float, dStep: float, xOrig,
