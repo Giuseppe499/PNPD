@@ -36,8 +36,8 @@ if __name__ == '__main__':
     lam = 5e-7 # TV regularization parameter
     pStep = 1  # Primal step length
     dStep = 1 / 8  # Dual step length
-    PReg = 1e-2  # Parameter for the preconditioner P
-    dp = .957 # Discrepancy principle parameter
+    PReg = 1e-1  # Parameter for the preconditioner P
+    dp = .9 # Discrepancy principle parameter
 
     bFFT = fft2(b)
     psfFFT = fft2(psf)

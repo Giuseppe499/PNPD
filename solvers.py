@@ -125,3 +125,30 @@ def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
         val1 = val2
         t0 = t
     return x2, rreList
+
+import torch
+def torch_NPDIT_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
+          mulWT: Callable, mulPIn: Callable,
+          pStep: float, dStep: float, PReg: float, xOrig, kMax: int = 1,
+          t0: float = 0):
+    """
+    Nested Primal Dual (FISTA-like algorithm)
+    Approximate argmin_{x \in R^d} f(x) + h(Wx) where f is differentiable and
+    the proximity operator of h* (Fenchel conjugate of h) is known.
+    """
+    t = .5 + .5 * np.sqrt(1 + 4 * t0 * t0)
+    xBar = x1 + (t0 - 1) / t * (x1 - x0)
+    # Primal Dual Iteration
+    x1Sum = torch.zeros(x1.shape)
+    for k in range(kMax):
+        x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulWT(y0)
+        x1Sum += x2
+        y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
+        y0 = y1
+    x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulWT(y0)
+    x1Sum += x2
+    x2 = x1Sum / (kMax + 1)
+    # Activate only for debugging
+    # rre = norm(xOrig.detach() - x2.detach()) / norm(xOrig.detach())
+    # print("RRE: " + str(rre))
+    return x1, x2, t
