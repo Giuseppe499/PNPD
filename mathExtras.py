@@ -55,7 +55,6 @@ def grad2D(m: np.array):
     # Comment for periodic boundary conditions
     dx[-1, :] = 0
     dy[:, -1] = 0
-
     return np.stack((dx, dy))
 
 def grad2Drgb(m: np.array):
