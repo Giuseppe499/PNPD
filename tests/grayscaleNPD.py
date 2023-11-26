@@ -36,6 +36,7 @@ if __name__ == '__main__':
     lam = 5e-7  # TV regularization parameter
     pStep = 1  # Primal step length
     dStep = 1 / 8  # Dual step length
+    dp = .957 # Discrepancy principle parameter
 
     bFFT = fft2(b)
     psfFFT = fft2(psf)
@@ -50,7 +51,7 @@ if __name__ == '__main__':
                          f=lambda x: sInner(
                              (fftConvolve2D(x, psf) - b).ravel()),
                          h=lambda y: lam * norm(y.ravel(), 1),
-                         pStep=pStep, dStep=dStep, maxit=maxIt, tol=tol, dp = .957,
+                         pStep=pStep, dStep=dStep, maxit=maxIt, tol=tol, dp = dp,
                          xOrig=image)
 
     np.savez("./grayscaleNPD.npz", imRec=imRec, rreList=rreList)
