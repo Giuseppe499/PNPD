@@ -31,12 +31,12 @@ if __name__ == '__main__':
         image = data['image']
         noiseNormSqd = data['noiseNormSqd']
 
-    maxIt = 3  # Maximum number of iterations
+    maxIt = 10  # Maximum number of iterations
     tol = noiseNormSqd # Tolerance
-    lam = 1e-7 # TV regularization parameter
+    lam = 5e-7 # TV regularization parameter
     pStep = 1  # Primal step length
     dStep = 1 / 8  # Dual step length
-    PReg = 1e-1  # Parameter for the preconditioner P
+    PReg = 5e-1  # Parameter for the preconditioner P
 
     # Compute FFT of b and psf
     bFFT = np.zeros(b.shape, dtype=complex)

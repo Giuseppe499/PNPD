@@ -18,17 +18,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import torch
+from numpy.linalg import norm
 from torch.fft import fft2
 from torchvision.transforms import ToTensor
 import numpy as np
-from numpy.linalg import norm
-
 from torchExtras import (gradLeastSquares, grad2D, div2D, proxhsTV, mulPInLeastSquares)
 from solvers import torch_NPDIT_step
 
 if __name__ == '__main__':
     torch.autograd.set_detect_anomaly(True)
-    with np.load('grayscaleBlurred.npz') as data:
+    with np.load('rgbBlurred.npz') as data:
         b = ToTensor()(data['b'])
         psf = ToTensor()(data['psf'])
         image = ToTensor()(data['image'])
@@ -36,28 +35,34 @@ if __name__ == '__main__':
     lam = torch.tensor(5e-7, requires_grad=True) # TV regularization parameter
     pStep = 1  # Primal step length
     dStep = torch.tensor(1 / 8, requires_grad=True)  # Dual step length
-    PReg = torch.tensor(1e-1, requires_grad=True)  # Parameter for the preconditioner P
+    PReg = torch.tensor(5e-1, requires_grad=True)  # Parameter for the preconditioner P
 
+    # Compute FFT of b and psf
     bFFT = fft2(b)
     psfFFT = fft2(psf)
-    psfFFTC = torch.conj(psfFFT)
+    psfFFTC=torch.conj(psfFFT)
     psfAbsSq = psfFFTC * psfFFT
 
-    gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT,psfFFTC)
+    # Clone psf on the 3 channels for easy computation
+    psfFFT = psfFFT.repeat(3, 1, 1)
+    psfFFTC = psfFFTC.repeat(3, 1, 1)
+    psfAbsSq = psfAbsSq.repeat(3, 1, 1)
+
+    gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT, psfFFTC)
     proxhs=lambda alpha, x: proxhsTV(lam, x)
     mulW=grad2D
     mulWT=div2D
-    mulPIn=lambda mu, x: mulPInLeastSquares(mu, x, psfAbsSq)
-
+    mulPIn=lambda mu, x: mulPInLeastSquares(mu, x,psfAbsSq)
+    
     x0 = b
     rreList = []
     x1 = x0
     y0 = proxhs(dStep / pStep, dStep / pStep * mulW(x1))
     t0 = 0
     for i in range(10):
-        x0, x1, t0, y0 = torch_NPDIT_step(x0=x0, x1=x1, y0=y0,gradf=gradf,proxhs=proxhs, mulW=mulW, mulWT=mulWT, mulPIn=mulPIn,                           
-                           pStep=pStep, dStep=dStep, PReg=PReg, t0=t0)
-        rreList.append(norm(x1.detach()-image) / norm(image))
+        x0, x1, t0, y0 = torch_NPDIT_step(x0=x0, x1=x1, y0=y0,gradf=gradf,proxhs=proxhs, mulW=mulW, mulWT=mulWT, mulPIn=mulPIn,
+                         pStep=pStep, dStep=dStep, PReg=PReg, t0=t0)
+        rreList.append(norm(x1.detach() - image) / norm(image))
         print(f"RRE: {rreList[-1]}")
     x1.sum().backward()
     print(lam.grad)

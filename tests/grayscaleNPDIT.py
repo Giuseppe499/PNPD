@@ -31,7 +31,7 @@ if __name__ == '__main__':
         image = data['image']
         noiseNormSqd = data['noiseNormSqd']
 
-    maxIt = 200 # Maximum number of iterations
+    maxIt = 10 # Maximum number of iterations
     tol = noiseNormSqd # Tolerance
     lam = 5e-7 # TV regularization parameter
     pStep = 1  # Primal step length
