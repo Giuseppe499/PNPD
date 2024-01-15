@@ -22,7 +22,9 @@ from numpy.linalg import norm
 from numpy.fft import fft2
 from mathExtras import (sInner, gradLeastSquaresRGB, grad2Drgb, div2Drgb, proxhsTVrgb,
                         fftConvolve2Drgb, mulPInLeastSquaresRGB)
-from solvers import NPDIT
+from solvers import NPDIT, deConvolve2DThikonov
+
+from skimage.metrics import structural_similarity as ssim
 
 if __name__ == '__main__':
     with np.load('rgbBlurred.npz') as data:
@@ -31,12 +33,13 @@ if __name__ == '__main__':
         image = data['image']
         noiseNormSqd = data['noiseNormSqd']
 
-    maxIt = 10  # Maximum number of iterations
+    maxIt = 100  # Maximum number of iterations
     tol = noiseNormSqd # Tolerance
-    lam = 5e-7 # TV regularization parameter
+    lam = 1e-2 # TV regularization parameter
     pStep = 1  # Primal step length
-    dStep = 1 / 8  # Dual step length
-    PReg = 5e-1  # Parameter for the preconditioner P
+    dStep = 1/8 # Dual step length
+    PReg = 1e-0  # Parameter for the preconditioner P
+    kMax = 5 # Number of dual iterations
 
     # Compute FFT of b and psf
     bFFT = np.zeros(b.shape, dtype=complex)
@@ -58,7 +61,15 @@ if __name__ == '__main__':
                          f=lambda x: sInner(
                              (fftConvolve2Drgb(x, psf) - b).ravel()),
                          h=lambda y: lam * norm(y.ravel(), 1),
-                         pStep=pStep, dStep=dStep, PReg=PReg, maxit=maxIt, dp = .9,
-                         tol=tol,  xOrig=image)
+                         pStep=pStep, dStep=dStep, PReg=PReg, maxit=maxIt, dp = 1.1,
+                         tol=tol,  xOrig=image, kMax=kMax)
+    
+    tichonov = b.copy()
+    for i in range(3):
+        tichonov[:,:,i] = deConvolve2DThikonov(np.array(b[:,:,i]), psf, 5e-2)
+    
+    print("SSIM: ", ssim(imRec, image, multichannel=True, data_range=1, channel_axis=2))
+    print("SSIM Tikhonov", ssim(tichonov, image, multichannel=True, data_range=1, channel_axis=2))
+    print("SSIM Blurred", ssim(b, image, multichannel=True, data_range=1, channel_axis=2))
 
     np.savez("./rgbNPDIT.npz", imRec=imRec, rreList=rreList)

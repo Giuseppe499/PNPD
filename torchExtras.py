@@ -19,8 +19,8 @@ def grad2D(m: torch.tensor):
 def div2D(dxdy: torch.tensor):
     dx = dxdy[0, ...]
     dy = dxdy[1, ...]
-    fx = torch.roll(dx, 1, dims=0) - dx
-    fy = torch.roll(dy, 1, dims=1) - dy
+    fx = torch.roll(dx, 1, dims=-2) - dx
+    fy = torch.roll(dy, 1, dims=-1) - dy
     fx[..., 0, :] = -dx[..., 0, :]
     fx[..., -1, :] = dx[..., -2, :]
     fy[..., :, 0] = -dy[..., :, 0]

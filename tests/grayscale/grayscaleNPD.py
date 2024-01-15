@@ -31,12 +31,13 @@ if __name__ == '__main__':
         image = data['image']
         noiseNormSqd = data['noiseNormSqd']
 
-    maxIt = 200  # Maximum number of iterations
+    maxIt = 50  # Maximum number of iterations
     tol = noiseNormSqd  # Tolerance
-    lam = 5e-7  # TV regularization parameter
+    lam = 1e-4  # TV regularization parameter
     pStep = 1  # Primal step length
     dStep = 1 / 8  # Dual step length
-    dp = .957 # Discrepancy principle parameter
+    dp = 1 # Discrepancy principle parameter
+    kMax = 100 # Number of dual iterations
 
     bFFT = fft2(b)
     psfFFT = fft2(psf)
@@ -52,6 +53,6 @@ if __name__ == '__main__':
                              (fftConvolve2D(x, psf) - b).ravel()),
                          h=lambda y: lam * norm(y.ravel(), 1),
                          pStep=pStep, dStep=dStep, maxit=maxIt, tol=tol, dp = dp,
-                         xOrig=image)
+                         xOrig=image, kMax=kMax)
 
     np.savez("./grayscaleNPD.npz", imRec=imRec, rreList=rreList)

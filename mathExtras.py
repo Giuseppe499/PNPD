@@ -50,33 +50,33 @@ def mulPInLeastSquaresRGB(mu, x, psfAbsSq):
     return mul
 
 def grad2D(m: np.array):
-    dx = np.roll(m, -1, axis=0) - m
-    dy = np.roll(m, -1, axis=1) - m
+    dx = np.roll(m, -1, axis=-2) - m
+    dy = np.roll(m, -1, axis=-1) - m
     # Comment for periodic boundary conditions
-    dx[-1, :] = 0
-    dy[:, -1] = 0
+    dx[...,-1, :] = 0
+    dy[...,:, -1] = 0
     return np.stack((dx, dy))
 
 def grad2Drgb(m: np.array):
     return np.stack([grad2D(m[:,:,i]) for i in range(3)], axis=-1)
 
 def div2D(dxdy: np.array):
-    dx = dxdy[0, :, :]
-    dy = dxdy[1, :, :]
-    fx = np.roll(dx, 1, axis=0) - dx
-    fy = np.roll(dy, 1, axis=1) - dy
-    fx[0, :] = -dx[0, :]
-    fx[-1, :] = dx[-2, :]
-    fy[:, 0] = -dy[:, 0]
-    fy[:, -1] = dy[:, -2]
+    dx = dxdy[0, ...]
+    dy = dxdy[1, ...]
+    fx = np.roll(dx, 1, axis=-2) - dx
+    fy = np.roll(dy, 1, axis=-1) - dy
+    fx[..., 0, :] = -dx[..., 0, :]
+    fx[..., -1, :] = dx[..., -2, :]
+    fy[..., :, 0] = -dy[..., :, 0]
+    fy[..., :, -1] = dy[..., :, -2]
     return fx + fy
 
 def div2Drgb(dxdy: np.array):
     return np.stack([div2D(dxdy[:,:,:,i]) for i in range(3)], axis=-1)
 
 def proxhsTV(lam: float, dxdy: np.array):
-    dx = dxdy[0, :, :]
-    dy = dxdy[1, :, :]
+    dx = dxdy[0,...]
+    dy = dxdy[1,...]
     factor = np.sqrt(dx*dx + dy*dy)
     factor = np.maximum(factor/lam, 1)
     factor = np.stack((factor, factor))
