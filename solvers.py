@@ -139,7 +139,7 @@ def torch_NPDIT_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callab
     t = .5 + .5 * np.sqrt(1 + 4 * t0 * t0)
     xBar = x1 + (t0 - 1) / t * (x1 - x0)
     # Primal Dual Iteration
-    x1Sum = torch.zeros(x1.shape, device=x1.device)
+    x1Sum = torch.zeros(x1.shape, device=x1.device, dtype=x1.dtype)
     for k in range(kMax):
         x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulWT(y0)
         x1Sum += x2
