@@ -37,7 +37,7 @@ if __name__ == '__main__':
     psf = np.roll(psf, (-psf.shape[0] // 2, -psf.shape[0] // 2), axis=(0, 1))
     # Generate noise
     noise = np.random.normal(size=image.shape)
-    noise *= 0.04 * norm(image) / norm(noise)
+    noise *= 0.008
     noiseNormSqd = sInner(noise.ravel())
     # Generate blurred image
     conv = np.zeros(image.shape)
