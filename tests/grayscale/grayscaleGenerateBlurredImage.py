@@ -32,12 +32,12 @@ if __name__ == '__main__':
     print(image.shape)
 
     # Generate PSF
-    psf = generatePsfMatrix(n, 4)
+    psf = generatePsfMatrix(n, 1.6)
     # Center PSF
     psf = np.roll(psf, (-psf.shape[0] // 2, -psf.shape[0] // 2), axis=(0, 1))
     # Generate noise
     noise = np.random.normal(size=image.shape)
-    noise *= 0.01 * norm(image) / norm(noise)
+    noise *= 0.008
     noiseNormSqd = sInner(noise.ravel())
     # Generate blurred image
     conv = fftConvolve2D(image, psf)

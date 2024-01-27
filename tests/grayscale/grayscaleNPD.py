@@ -36,8 +36,8 @@ if __name__ == '__main__':
     lam = 1e-4  # TV regularization parameter
     pStep = 1  # Primal step length
     dStep = 1 / 8  # Dual step length
-    dp = 1 # Discrepancy principle parameter
-    kMax = 100 # Number of dual iterations
+    dp = 1.01 # Discrepancy principle parameter
+    kMax = 1 # Number of dual iterations
 
     bFFT = fft2(b)
     psfFFT = fft2(psf)
