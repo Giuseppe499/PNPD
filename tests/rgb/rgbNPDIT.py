@@ -33,13 +33,13 @@ if __name__ == '__main__':
         image = data['image']
         noiseNormSqd = data['noiseNormSqd']
 
-    maxIt = 100  # Maximum number of iterations
+    maxIt = 200  # Maximum number of iterations
     tol = noiseNormSqd # Tolerance
-    lam = 1e-2 # TV regularization parameter
+    lam = 1e-3 # TV regularization parameter
     pStep = 1  # Primal step length
     dStep = 1/8 # Dual step length
-    PReg = 1e-0  # Parameter for the preconditioner P
-    kMax = 5 # Number of dual iterations
+    PReg = 1e-1  # Parameter for the preconditioner P
+    kMax = 1 # Number of dual iterations
 
     # Compute FFT of b and psf
     bFFT = np.zeros(b.shape, dtype=complex)
@@ -61,7 +61,7 @@ if __name__ == '__main__':
                          f=lambda x: sInner(
                              (fftConvolve2Drgb(x, psf) - b).ravel()),
                          h=lambda y: lam * norm(y.ravel(), 1),
-                         pStep=pStep, dStep=dStep, PReg=PReg, maxit=maxIt, dp = 1.1,
+                         pStep=pStep, dStep=dStep, PReg=PReg, maxit=maxIt, dp = 1.01,
                          tol=tol,  xOrig=image, kMax=kMax)
     
     tichonov = b.copy()

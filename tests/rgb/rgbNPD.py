@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     maxIt = 200 # Maximum number of iterations
     tol = noiseNormSqd  # Tolerance
-    lam = 1e-7  # TV regularization parameter
+    lam = 1e-3  # TV regularization parameter
     pStep = 1  # Primal step length
     dStep = 1 / 8  # Dual step length
 
@@ -54,7 +54,7 @@ if __name__ == '__main__':
                          f=lambda x: sInner(
                              (fftConvolve2Drgb(x, psf) - b).ravel()),
                          h=lambda y: lam * norm(y.ravel(), 1),
-                         pStep=pStep, dStep=dStep, maxit=maxIt, tol=tol, dp = .9,
+                         pStep=pStep, dStep=dStep, maxit=maxIt, tol=tol, dp = 1.01,
                          xOrig=image)
 
     np.savez("./rgbNPD.npz", imRec=imRec, rreList=rreList)
