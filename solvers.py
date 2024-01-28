@@ -22,7 +22,9 @@ from typing import Callable
 import numpy as np
 from numpy.linalg import norm
 from numpy.fft import fft2, ifft2
+from skimage.metrics import structural_similarity as ssim
 
+import time
 
 def deConvolve2D(conv, psf, epsilon: float):
     return np.real(ifft2(fft2(conv) / np.clip(fft2(psf), epsilon, None)))
@@ -45,8 +47,8 @@ def NPD_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
              mulWT: Callable, pStep: float, dStep: float, t0: float, C: float,
              rho_i: float, kMax: int = 1):
     t = .5 + .5 * np.sqrt(1 + 4 * t0 * t0)
-    gamma = (t0 - 1) / t
-    gamma = min(gamma, C*rho_i / (norm(x1 - x0)))
+    gammaFFBS = (t0 - 1) / t
+    gamma = min(gammaFFBS, C*rho_i / (norm(x1 - x0)))
     xBar = x1 + gamma * (x1 - x0)
     # Primal Dual Iteration
     #k = 0
@@ -62,53 +64,84 @@ def NPD_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
     x2 = xBar - pStep * gradf(xBar) - pStep * mulWT(y0)
     x1Sum += x2
     x2 = x1Sum / kMax
-    return x1, x2, t, y1
+    return x1, x2, t, y1, gamma, gammaFFBS
+
+def NPD_step_no_momentum(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
+             mulWT: Callable, pStep: float, dStep: float, t0: float, C: float,
+             rho_i: float, kMax: int = 1):
+    # Primal Dual Iteration
+    #k = 0
+    x2 = x1 - pStep * gradf(x1) - pStep * mulWT(y0)
+    y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
+    y0 = y1
+    x1Sum = np.zeros(x1.shape)
+    for k in range(1,kMax):
+        x2 = x1 - pStep * gradf(x1) - pStep * mulWT(y0)
+        x1Sum += x2
+        y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
+        y0 = y1
+    x2 = x1 - pStep * gradf(x1) - pStep * mulWT(y0)
+    x1Sum += x2
+    x2 = x1Sum / kMax
+    return x1, x2, 0, y1, 0, 0
 
 def NPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable, mulWT: Callable,
-        f: Callable, h: Callable, pStep: float, dStep: float, xOrig,
-        kMax: int = 1, t0: float = 0, rho: Callable = lambda i: 1/(i+1)**1.1,
-        tol: float = 1e-4, dp: float = 1, maxit: int = 100):
+        f: Callable, pStep: float, dStep: float, xOrig,
+        kMax: int = 1, t0: float = 1, rho: Callable = lambda i: 1/(i+1)**1.1,
+        tol: float = 1e-4, dp: float = 1, maxit: int = 100, momentum: bool = True):
     """
     Nested Primal Dual (FISTA-like algorithm)
     Approximate argmin_{x \in R^d} f(x) + h(Wx) where f is differentiable and
     the proximity operator of h* (Fenchel conjugate of h) is known.
     """
+    dpReached = False
+    imRec = None
+
+    timeList = []
     rreList = []
+    ssimList = []
+    gammaList = []
+    gammaFFBSList = []
+
+    x1 = x0
     y0 = np.zeros(proxhs(1, mulW(x0)).shape)
 
-    i = 0
-    x0, x1, t0, y0 = NPD_step(x0=x0, x1=x0, y0=y0, gradf=gradf, proxhs=proxhs,
-                                  mulW=mulW, mulWT=mulWT, pStep=pStep, dStep=dStep,
-                                  t0=t0, C=0, rho_i=1, kMax=kMax)
-    rre = norm(xOrig - x1) / norm(xOrig)
-    rreList.append(rre)
-    print("Iteration: " + str(i), end="")
-    print(", RRE: " + str(rre))
-    if f(x1) < dp*tol:
-        print("tol reached")
-    else:
-        C = 10 * norm(x1 - x0) 
-        for i in range(1,maxit):
-            x0, x1, t0, y0 = NPD_step(x0=x0, x1=x1, y0=y0, gradf=gradf, proxhs=proxhs,
-                                    mulW=mulW, mulWT=mulWT, pStep=pStep, dStep=dStep,
-                                    t0=t0, C=C, rho_i=rho(i), kMax=kMax)
-            val2 = f(x1) + h(mulW(x1))
-            rre = norm(xOrig - x1) / norm(xOrig)
-            rreList.append(rre)
-            print("Iteration: " + str(i), end="")
-            print(", RRE: " + str(rre), end="")
-            print(", f(x1) + g(x1): " + str(val2))
-            if f(x1) < dp*tol:
-                print("tol reached")
-                break
-    return x1, rreList
+    Step = NPD_step if momentum else NPD_step_no_momentum
+
+    C = 0
+    for i in range(maxit):
+        start = time.process_time()
+        x0, x1, t0, y0, gamma, gammaFFBS = Step(x0=x0, x1=x1, y0=y0, gradf=gradf, proxhs=proxhs,
+                                mulW=mulW, mulWT=mulWT, pStep=pStep, dStep=dStep,
+                                t0=t0, C=C, rho_i=rho(i), kMax=kMax)
+        elapsed = time.process_time() - start
+        if i == 0:
+            C = 10 * norm(x1 - x0)
+        rre = norm(xOrig - x1) / norm(xOrig)
+        rreList.append(rre)
+        timeList.append(elapsed)
+        ssimList.append(ssim(x1, xOrig, data_range=1))
+        gammaList.append(gamma)
+        gammaFFBSList.append(gammaFFBS)
+        print("Iteration: " + str(i), end="")
+        print(", RRE: " + str(rre), end="")
+        print(", SSIM: " + str(ssimList[-1]))
+        if f(x1) < dp*tol and not dpReached :
+            imRec = x1
+            dpStopIndex = i+1
+            dpReached = True
+    
+    if imRec is None:
+        imRec = x1
+        dpStopIndex = i+1
+    return x1, imRec, rreList, ssimList, timeList, gammaList, gammaFFBSList, dpStopIndex
 
 def PNPD_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
                mulWT: Callable, mulPIn: Callable, pStep: float, dStep: float,
                PReg: float, t0: float, C: float, rho_i: float, kMax: int = 1):
     t = .5 + .5 * np.sqrt(1 + 4 * t0 * t0)
-    gamma = (t0 - 1) / t
-    gamma = min(gamma, C*rho_i / (norm(x1 - x0)))
+    gammaFFBS = (t0 - 1) / t
+    gamma = min(gammaFFBS, C*rho_i / (norm(x1 - x0)))
     xBar = x1 + gamma * (x1 - x0)
     # Primal Dual Iteration
     #k = 0
@@ -124,49 +157,78 @@ def PNPD_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
     x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulWT(y0)
     x1Sum += x2
     x2 = x1Sum / kMax
-    return x1, x2, t, y1
+    return x1, x2, t, y1, gamma, gammaFFBS
+
+def PNPD_step_no_momentum(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
+               mulWT: Callable, mulPIn: Callable, pStep: float, dStep: float,
+               PReg: float, t0: float, C: float, rho_i: float, kMax: int = 1):
+    # Primal Dual Iteration
+    #k = 0
+    x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulWT(y0)
+    y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
+    y0 = y1
+    x1Sum = np.zeros(x1.shape)
+    for k in range(1,kMax):
+        x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulWT(y0)
+        x1Sum += x2
+        y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
+        y0 = y1
+    x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulWT(y0)
+    x1Sum += x2
+    x2 = x1Sum / kMax
+    return x1, x2, None, y1, None, None
 
 
 def PNPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
-          mulWT: Callable, mulPIn: Callable, f: Callable, h: Callable,
+          mulWT: Callable, mulPIn: Callable, f: Callable,
           pStep: float, dStep: float, PReg: float, xOrig, kMax: int = 1,
-          t0: float = 0, rho: Callable = lambda i: 1/(i+1)**1.1, tol: float = 1e-4, dp: float = 1, maxit: int = 100):
+          t0: float = 1, rho: Callable = lambda i: 1/(i+1)**1.1, tol: float = 1e-4, dp: float = 1, maxit: int = 100, momentum: bool = True):
     """
     Nested Primal Dual (FISTA-like algorithm)
     Approximate argmin_{x \in R^d} f(x) + h(Wx) where f is differentiable and
     the proximity operator of h* (Fenchel conjugate of h) is known.
     """
+    dpReached = False
+    imRec = None
+
+    timeList = []
     rreList = []
+    ssimList = []
+    gammaList = []
+    gammaFFBSList = []
+
+    x1 = x0
     y0 = np.zeros(proxhs(1, mulW(x0)).shape)
 
-    i = 0
-    x0, x1, t0, y0 = PNPD_step(x0=x0, x1=x0, y0=y0, gradf=gradf, proxhs=proxhs,
-                                  mulW=mulW, mulWT=mulWT, mulPIn=mulPIn, pStep=pStep,
-                                  dStep=dStep, PReg=PReg, t0=t0, C=0, rho_i=1,
-                                  kMax=kMax)
-    rre = norm(xOrig - x1) / norm(xOrig)
-    rreList.append(rre)
-    print("Iteration: " + str(i), end="")
-    print(", RRE: " + str(rre))
-    if f(x1) < dp*tol:
-        print("tol reached")
-    else:
-        C = 10 * norm(x1 - x0) 
-        for i in range(1,maxit):
-            x0, x1, t0, y0 = PNPD_step(x0=x0, x1=x1, y0=y0, gradf=gradf, proxhs=proxhs,
-                                  mulW=mulW, mulWT=mulWT, mulPIn=mulPIn, pStep=pStep,
-                                  dStep=dStep, PReg=PReg, t0=t0, C=C, rho_i=rho(i),
-                                  kMax=kMax)
-            val2 = f(x1) + h(mulW(x1))
-            rre = norm(xOrig - x1) / norm(xOrig)
-            rreList.append(rre)
-            print("Iteration: " + str(i), end="")
-            print(", RRE: " + str(rre), end="")
-            print(", f(x1) + g(x1): " + str(val2))
-            if f(x1) < dp*tol:
-                print("tol reached")
-                break
-    return x1, rreList
+    Step = PNPD_step if momentum else PNPD_step_no_momentum
+
+    C = 0
+    for i in range(maxit):
+        start = time.process_time()
+        x0, x1, t0, y0, gamma, gammaFFBS = Step(x0=x0, x1=x1, y0=y0, gradf=gradf, proxhs=proxhs,
+                                mulW=mulW, mulWT=mulWT, mulPIn=mulPIn, pStep=pStep,
+                                dStep=dStep, PReg=PReg, t0=t0, C=C, rho_i=rho(i),
+                                kMax=kMax)
+        elapsed = time.process_time() - start
+        if i == 0:
+            C = 10 * norm(x1 - x0)
+        rre = norm(xOrig - x1) / norm(xOrig)
+        rreList.append(rre)
+        timeList.append(elapsed)
+        ssimList.append(ssim(x1, xOrig, data_range=1))
+        gammaList.append(gamma)
+        gammaFFBSList.append(gammaFFBS)
+        print("Iteration: " + str(i), end="")
+        print(", RRE: " + str(rre), end="")
+        print(", SSIM: " + str(ssimList[-1]))
+        if f(x1) < dp*tol and not dpReached :
+            imRec = x1
+            dpStopIndex = i+1
+            dpReached = True
+    if imRec is None:
+        imRec = x1
+        dpStopIndex = i+1
+    return x1, imRec, rreList, ssimList, timeList, gammaList, gammaFFBSList, dpStopIndex
 
 import torch
 def torch_PNPD_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,

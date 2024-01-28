@@ -49,6 +49,7 @@ if __name__ == '__main__':
     bFFT = fft2(b)
     psfFFT = fft2(psf)
     psfFFTC = np.conjugate(psfFFT)
+    psfAbsSq = psfFFTC * psfFFT
 
     # Save data
-    np.savez('./grayscaleBlurred.npz', b=b, bFFT=bFFT, psf=psf, psfFFT=psfFFT, psfFFTC=psfFFTC, image=image, noiseNormSqd=noiseNormSqd)
+    np.savez('./grayscaleBlurred.npz', b=b, bFFT=bFFT, psf=psf, psfFFT=psfFFT, psfFFTC=psfFFTC, psfAbsSq=psfAbsSq, image=image, noiseNormSqd=noiseNormSqd)

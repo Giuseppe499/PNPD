@@ -27,35 +27,48 @@ from solvers import PNPD
 if __name__ == '__main__':
     with np.load('grayscaleBlurred.npz') as data:
         b = data['b']
+        bFFT = data['bFFT']
         psf = data['psf']
+        psfFFT = data['psfFFT']
+        psfFFTC = data['psfFFTC']
+        psfAbsSq = data['psfAbsSq']
         image = data['image']
         noiseNormSqd = data['noiseNormSqd']
 
-    maxIt = 50 # Maximum number of iterations
+    maxIt = 150 # Maximum number of iterations
     tol = noiseNormSqd # Tolerance
-    lam = 1e-4 # TV regularization parameter
+    lam = 1e-3 # TV regularization parameter
     pStep = 1  # Primal step length
     dStep = 1 / 8  # Dual step length
-    PReg = 5e-1  # Parameter for the preconditioner P
+    PReg = 1e-1  # Parameter for the preconditioner P
     dp = 1.01 # Discrepancy principle parameter
     kMax = 1 # Number of dual iterations
 
-    bFFT = fft2(b)
-    psfFFT = fft2(psf)
-    psfFFTC = np.conjugate(psfFFT)
-    psfAbsSq = psfFFTC * psfFFT
-    imRec, rreList = PNPD(x0=b,
-                           gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT,
-                                                            psfFFTC),
-                           proxhs=lambda alpha, x: proxhsTV(lam, x),
-                           mulW=grad2D,
-                           mulWT=div2D,
-                           mulPIn=lambda mu, x: mulPInLeastSquares(mu, x,
-                                                                   psfAbsSq),
-                           f=lambda x: sInner(
-                               (fftConvolve2D(x, psf) - b).ravel()),
-                           h=lambda y: lam * norm(y.ravel(), 1),
-                           pStep=pStep, dStep=dStep, PReg=PReg, dp=dp,
-                           maxit=maxIt, tol=tol, xOrig=image, kMax=kMax)
+    gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT, psfFFTC)
+    proxhs=lambda alpha, x: proxhsTV(lam, x)
+    mulW=grad2D
+    mulWT=div2D
+    mulPIn=lambda mu, x: mulPInLeastSquares(mu, x, psfAbsSq)
+    f=lambda x: sInner((fftConvolve2D(x, psf) - b).ravel())
+    yShape = proxhs(1, mulW(b.copy())).shape
+    rho = lambda i: 1 / (i + 1) ** 1.1
 
-    np.savez("./grayscalePNPD.npz", imRec=imRec, rreList=rreList)
+################################################################################
+    # PNPD  
+    print("PNPD")
+    x1,imRecPNPD, rreListPNPD, ssimListPNPD, timeListPNPD, gammaListPNPD, gammaFFBSListPNPD, dpStopIndexPNPD\
+         = PNPD(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT,
+                mulPIn=mulPIn, f=f, pStep=pStep, dStep=dStep, PReg=PReg,
+                dp=dp, maxit=maxIt, tol=tol, xOrig=image, kMax=kMax)
+    print("\n\n\n\n")
+    
+################################################################################
+    # PNPD without momentum
+    print("PNPD without momentum")
+    x1,imRecPNPD_NM, rreListPNPD_NM, ssimListPNPD_NM, timeListPNPD_NM, gammaListPNPD_NM, gammaFFBSListPNPD_NM, dpStopIndexPNPD_NM\
+         = PNPD(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT,
+                mulPIn=mulPIn, f=f, pStep=pStep, dStep=dStep, PReg=PReg,
+                dp=dp, maxit=maxIt, tol=tol, xOrig=image, kMax=kMax, momentum=False)
+
+    np.savez("./grayscalePNPD.npz", imRecPNPD=imRecPNPD, rreListPNPD=rreListPNPD, ssimListPNPD=ssimListPNPD, timeListPNPD=timeListPNPD, dpStopIndexPNPD=dpStopIndexPNPD, gammaListPNPD=gammaListPNPD, gammaFFBSListPNPD=gammaFFBSListPNPD,\
+                imRecPNPD_NM=imRecPNPD_NM, rreListPNPD_NM=rreListPNPD_NM, ssimListPNPD_NM=ssimListPNPD_NM, timeListPNPD_NM=timeListPNPD_NM, dpStopIndexPNPD_NM=dpStopIndexPNPD_NM, gammaListPNPD_NM=gammaListPNPD_NM, gammaFFBSListPNPD_NM=gammaFFBSListPNPD_NM)
