@@ -103,7 +103,7 @@ def NPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable, mulWT: Callable,
                 break
     return x1, rreList
 
-def NPDIT_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
+def PNPD_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
                mulWT: Callable, mulPIn: Callable, pStep: float, dStep: float,
                PReg: float, t0: float, C: float, rho_i: float, kMax: int = 1):
     t = .5 + .5 * np.sqrt(1 + 4 * t0 * t0)
@@ -127,7 +127,7 @@ def NPDIT_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
     return x1, x2, t, y1
 
 
-def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
+def PNPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
           mulWT: Callable, mulPIn: Callable, f: Callable, h: Callable,
           pStep: float, dStep: float, PReg: float, xOrig, kMax: int = 1,
           t0: float = 0, rho: Callable = lambda i: 1/(i+1)**1.1, tol: float = 1e-4, dp: float = 1, maxit: int = 100):
@@ -140,7 +140,7 @@ def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
     y0 = np.zeros(proxhs(1, mulW(x0)).shape)
 
     i = 0
-    x0, x1, t0, y0 = NPDIT_step(x0=x0, x1=x0, y0=y0, gradf=gradf, proxhs=proxhs,
+    x0, x1, t0, y0 = PNPD_step(x0=x0, x1=x0, y0=y0, gradf=gradf, proxhs=proxhs,
                                   mulW=mulW, mulWT=mulWT, mulPIn=mulPIn, pStep=pStep,
                                   dStep=dStep, PReg=PReg, t0=t0, C=0, rho_i=1,
                                   kMax=kMax)
@@ -153,7 +153,7 @@ def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
     else:
         C = 10 * norm(x1 - x0) 
         for i in range(1,maxit):
-            x0, x1, t0, y0 = NPDIT_step(x0=x0, x1=x1, y0=y0, gradf=gradf, proxhs=proxhs,
+            x0, x1, t0, y0 = PNPD_step(x0=x0, x1=x1, y0=y0, gradf=gradf, proxhs=proxhs,
                                   mulW=mulW, mulWT=mulWT, mulPIn=mulPIn, pStep=pStep,
                                   dStep=dStep, PReg=PReg, t0=t0, C=C, rho_i=rho(i),
                                   kMax=kMax)
@@ -169,7 +169,7 @@ def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
     return x1, rreList
 
 import torch
-def torch_NPDIT_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
+def torch_PNPD_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
           mulWT: Callable, mulPIn: Callable,
           pStep: float, dStep: float, PReg: float, kMax: int = 1,
           t0: float = 0):

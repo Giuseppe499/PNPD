@@ -26,9 +26,9 @@ if __name__ == '__main__':
         psf = data['psf']
         image = data['image']
 
-    with np.load('rgbNPDIT.npz') as data:
-        imRecNPDIT = data['imRec']
-        rreListNPDIT = data['rreList']
+    with np.load('rgbPNPD.npz') as data:
+        imRecPNPD = data['imRec']
+        rreListPNPD = data['rreList']
     
     with np.load('rgbNPD.npz') as data:
         imRecNPD = data['imRec']
@@ -44,10 +44,10 @@ if __name__ == '__main__':
     plt.imshow(b, vmin = 0, vmax = 1)
     plt.title('Blurred Image')
 
-    # Plot NPDIT reconstruction
+    # Plot PNPD reconstruction
     plt.figure()
-    plt.imshow(imRecNPDIT, vmin = 0, vmax = 1)
-    plt.title('NPDIT Reconstruction')
+    plt.imshow(imRecPNPD, vmin = 0, vmax = 1)
+    plt.title('PNPD Reconstruction')
     
     # Plot NPD reconstruction
     plt.figure()
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     
     # Plot relative residual error
     plt.figure()
-    plt.semilogy(rreListNPDIT, label='NPDIT')
+    plt.semilogy(rreListPNPD, label='PNPD')
     plt.semilogy(rreListNPD, label='NPD')
     plt.legend()
     plt.title('Relative Residual Error')

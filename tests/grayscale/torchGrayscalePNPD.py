@@ -24,7 +24,7 @@ import numpy as np
 from numpy.linalg import norm
 
 from torchExtras import (gradLeastSquares, grad2D, div2D, proxhsTV, mulPInLeastSquares)
-from solvers import torch_NPDIT_step
+from solvers import torch_PNPD_step
 
 if __name__ == '__main__':
     torch.autograd.set_detect_anomaly(True)
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     y0 = proxhs(dStep / pStep, dStep / pStep * mulW(x1))
     t0 = 0
     for i in range(10):
-        x0, x1, t0, y0 = torch_NPDIT_step(x0=x0, x1=x1, y0=y0,gradf=gradf,proxhs=proxhs, mulW=mulW, mulWT=mulWT, mulPIn=mulPIn,                           
+        x0, x1, t0, y0 = torch_PNPD_step(x0=x0, x1=x1, y0=y0,gradf=gradf,proxhs=proxhs, mulW=mulW, mulWT=mulWT, mulPIn=mulPIn,                           
                            pStep=pStep, dStep=dStep, PReg=PReg, t0=t0)
         rreList.append(norm(x1.detach()-image) / norm(image))
         print(f"RRE: {rreList[-1]}")

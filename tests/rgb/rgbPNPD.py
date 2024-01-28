@@ -22,7 +22,7 @@ from numpy.linalg import norm
 from numpy.fft import fft2
 from mathExtras import (sInner, gradLeastSquaresRGB, grad2Drgb, div2Drgb, proxhsTVrgb,
                         fftConvolve2Drgb, mulPInLeastSquaresRGB)
-from solvers import NPDIT, deConvolve2DThikonov
+from solvers import PNPD, deConvolve2DThikonov
 
 from skimage.metrics import structural_similarity as ssim
 
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     psfFFTC=np.conjugate(psfFFT)
     psfAbsSq = psfFFTC * psfFFT
     
-    imRec, rreList = NPDIT(x0=b,
+    imRec, rreList = PNPD(x0=b,
                          gradf=lambda x: gradLeastSquaresRGB(x, bFFT,
                                                           psfFFT,
                                                           psfFFTC),
@@ -72,4 +72,4 @@ if __name__ == '__main__':
     print("SSIM Tikhonov", ssim(tichonov, image, multichannel=True, data_range=1, channel_axis=2))
     print("SSIM Blurred", ssim(b, image, multichannel=True, data_range=1, channel_axis=2))
 
-    np.savez("./rgbNPDIT.npz", imRec=imRec, rreList=rreList)
+    np.savez("./rgbPNPD.npz", imRec=imRec, rreList=rreList)

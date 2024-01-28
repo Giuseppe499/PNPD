@@ -22,7 +22,7 @@ from numpy.linalg import norm
 from numpy.fft import fft2
 from mathExtras import (sInner, gradLeastSquares, grad2D, div2D, proxhsTV,
                         fftConvolve2D, mulPInLeastSquares)
-from solvers import NPDIT
+from solvers import PNPD
 
 if __name__ == '__main__':
     with np.load('grayscaleBlurred.npz') as data:
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     psfFFT = fft2(psf)
     psfFFTC = np.conjugate(psfFFT)
     psfAbsSq = psfFFTC * psfFFT
-    imRec, rreList = NPDIT(x0=b,
+    imRec, rreList = PNPD(x0=b,
                            gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT,
                                                             psfFFTC),
                            proxhs=lambda alpha, x: proxhsTV(lam, x),
@@ -58,4 +58,4 @@ if __name__ == '__main__':
                            pStep=pStep, dStep=dStep, PReg=PReg, dp=dp,
                            maxit=maxIt, tol=tol, xOrig=image, kMax=kMax)
 
-    np.savez("./grayscaleNPDIT.npz", imRec=imRec, rreList=rreList)
+    np.savez("./grayscalePNPD.npz", imRec=imRec, rreList=rreList)

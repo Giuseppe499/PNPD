@@ -23,7 +23,7 @@ from torch.fft import fft2
 from torchvision.transforms import ToTensor
 import numpy as np
 from torchExtras import (gradLeastSquares, grad2D, div2D, proxhsTV, mulPInLeastSquares)
-from solvers import torch_NPDIT_step
+from solvers import torch_PNPD_step
 from skimage.metrics import structural_similarity as ssim
 
 if __name__ == '__main__':
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     for j in range(steps):
         for i in range(3):
             gradf=lambda x: gradLeastSquares(x, bFFT[i,:,:], psfFFT[0,:,:], psfFFTC[0,:,:])
-            xx0[i, :, :], xx1[i, :, :], tt0, yy0[i, :, :, :] = torch_NPDIT_step(x0=xx0[i, :, :], x1=xx1[i, :, :], y0=yy0[i, :, :, :],gradf=gradf,proxhs=proxhs, mulW=mulW, mulWT=mulWT, mulPIn=mulPIn,
+            xx0[i, :, :], xx1[i, :, :], tt0, yy0[i, :, :, :] = torch_PNPD_step(x0=xx0[i, :, :], x1=xx1[i, :, :], y0=yy0[i, :, :, :],gradf=gradf,proxhs=proxhs, mulW=mulW, mulWT=mulWT, mulPIn=mulPIn,
                          pStep=pStep, dStep=dStep, PReg=PReg, t0=tt0, kMax=kMax)
             rreList.append(norm(xx1.detach() - image) / norm(image))
         ssimList.append(ssim(xx1.permute(1, 2, 0).detach().numpy(), image.permute(1, 2, 0).numpy(), multichannel=True, channel_axis=2, data_range=1))
@@ -99,14 +99,14 @@ if __name__ == '__main__':
     y0 = torch.zeros(2, batchSize, 3, 256, 256)
     t0 = 0
     for i in range(steps):
-        x0, x1, t0, y0 = torch_NPDIT_step(x0=x0, x1=x1, y0=y0,gradf=gradf,proxhs=proxhs, mulW=mulW, mulWT=mulWT, mulPIn=mulPIn,
+        x0, x1, t0, y0 = torch_PNPD_step(x0=x0, x1=x1, y0=y0,gradf=gradf,proxhs=proxhs, mulW=mulW, mulWT=mulWT, mulPIn=mulPIn,
                          pStep=pStep, dStep=dStep, PReg=PReg, t0=t0, kMax=kMax)
         rreList.append(norm(x1.detach() - image) / norm(image))
         ssimList.append(ssim(x1[0,...].squeeze().permute(1, 2, 0).detach().numpy(), image.permute(1, 2, 0).numpy(), multichannel=True, channel_axis=2, data_range=1))
         print(f"RRE: {rreList[-1]}, SSIM: {ssimList[-1]}")
     x1.sum().backward()
 
-    npx1 = np.load("./rgbNPDIT.npz")["imRec"]
+    npx1 = np.load("./rgbPNPD.npz")["imRec"]
     
     print(f"xx1-x1: {xx1-x1}")
     # print(f"xx1-npx1: {xx1.squeeze().permute(1,2,0).detach().numpy() -npx1}")

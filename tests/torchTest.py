@@ -5,7 +5,7 @@ from torchvision.transforms import ToTensor
 import numpy as np
 from torchExtras import (gradLeastSquares, grad2D, div2D, proxhsTV, mulPInLeastSquares)
 from mathExtras import generatePsfMatrix
-from solvers import torch_NPDIT_step
+from solvers import torch_PNPD_step
 from skimage.metrics import structural_similarity as ssim
 
 imageR = torch.tensor([[0.1, 0.2, 0.3, 0.4], [0.5, 0.6, 0.7, 0.8], [0.9, 1.1, 1.2, 1.3], [1.4, 1.5, 1.6, 1.7]])
