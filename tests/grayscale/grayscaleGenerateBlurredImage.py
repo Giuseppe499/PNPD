@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from PIL import Image
 import numpy as np
-from numpy.linalg import norm
+from numpy.fft import fft2
 from mathExtras import fftConvolve2D, generatePsfMatrix, sInner
 
 IMGPATH = "cameraman.tif"
@@ -45,4 +45,10 @@ if __name__ == '__main__':
     # Add noise to blurred image
     b = np.clip(conv + noise, 0, 1)
 
-    np.savez('./grayscaleBlurred.npz', b=b, psf=psf, image=image, noiseNormSqd=noiseNormSqd)
+    # Generate FFTs
+    bFFT = fft2(b)
+    psfFFT = fft2(psf)
+    psfFFTC = np.conjugate(psfFFT)
+
+    # Save data
+    np.savez('./grayscaleBlurred.npz', b=b, bFFT=bFFT, psf=psf, psfFFT=psfFFT, psfFFTC=psfFFTC, image=image, noiseNormSqd=noiseNormSqd)
