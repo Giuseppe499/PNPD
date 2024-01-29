@@ -50,7 +50,6 @@ if __name__ == '__main__':
     mulW=grad2D
     mulWT=div2D
     f=lambda x: sInner((fftConvolve2D(x, psf) - b).ravel())
-    yShape = proxhs(1, mulW(b.copy())).shape
     rho = lambda i: 1 / (i + 1) ** 1.1
 
     ################################################################################
@@ -69,4 +68,3 @@ if __name__ == '__main__':
 
     np.savez("./grayscaleNPD.npz", imRecNPD=imRecNPD, rreListNPD=rreListNPD, ssimListNPD=ssimListNPD, timeListNPD=timeListNPD, dpStopIndexNPD=dpStopIndexNPD, gammaListNPD=gammaListNPD, gammaFFBSListNPD=gammaFFBSListNPD,\
              imRecNPD_NM=imRecNPD_NM, rreListNPD_NM=rreListNPD_NM, ssimListNPD_NM=ssimListNPD_NM, timeListNPD_NM=timeListNPD_NM, dpStopIndexNPD_NM=dpStopIndexNPD_NM, gammaListNPD_NM=gammaListNPD_NM, gammaFFBSListNPD_NM=gammaFFBSListNPD_NM)
-    

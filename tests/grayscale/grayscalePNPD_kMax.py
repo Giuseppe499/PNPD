@@ -1,5 +1,5 @@
 """
-NPD implementation
+PNPD implementation
 
 Copyright (C) 2023 Giuseppe Scarlato
 
@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 from numpy.linalg import norm
-from numpy.fft import fft2
 from mathExtras import (sInner, gradLeastSquares, grad2D, div2D, proxhsTV,
                         fftConvolve2D, mulPInLeastSquares)
 from solvers import PNPD
@@ -35,39 +34,49 @@ if __name__ == '__main__':
         image = data['image']
         noiseNormSqd = data['noiseNormSqd']
 
-    maxIt = 150 # Maximum number of iterations
-    tol = noiseNormSqd # Tolerance
-    lam = 1e-3 # TV regularization parameter
+    maxIt = 80  # Maximum number of iterations
+    tol = noiseNormSqd  # Tolerance
+    lamValues = [1e-3, 1e-2]  # TV regularization parameter
     pStep = 1  # Primal step length
     dStep = 1 / 8  # Dual step length
     PReg = 1e-1  # Parameter for the preconditioner P
     dp = 1.01 # Discrepancy principle parameter
-    kMax = 1 # Number of dual iterations
+    kMaxValues = [1,2,5,10] # Number of dual iterations
+
+    
 
     gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT, psfFFTC)
-    proxhs=lambda alpha, x: proxhsTV(lam, x)
     mulW=grad2D
     mulWT=div2D
     mulPIn=lambda mu, x: mulPInLeastSquares(mu, x, psfAbsSq)
     f=lambda x: sInner((fftConvolve2D(x, psf) - b).ravel())
     rho = lambda i: 1 / (i + 1) ** 1.1
 
-################################################################################
-    # PNPD  
-    print("PNPD")
-    x1,imRecPNPD, rreListPNPD, ssimListPNPD, timeListPNPD, gammaListPNPD, gammaFFBSListPNPD, dpStopIndexPNPD\
-         = PNPD(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT,
+    ################################################################################
+    # PNPD kMax
+    x1_K, imRecPNPD_K, rreListPNPD_K, ssimListPNPD_K, timeListPNPD_K, dpStopIndexPNPD_K = [], [], [], [], [], []
+    for lam in lamValues:
+        proxhs=lambda alpha, x: proxhsTV(lam, x)
+        x1_Kl, imRecPNPD_Kl, rreListPNPD_Kl, ssimListPNPD_Kl, timeListPNPD_Kl, dpStopIndexPNPD_Kl = [], [], [], [], [], []
+        for kMax in kMaxValues:
+            print("PNPD kMax = ", kMax)
+            x1,imRecPNPD, rreListPNPD, ssimListPNPD, timeListPNPD, gammaListPNPD, gammaFFBSListPNPD, dpStopIndexPNPD = \
+            PNPD(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT,
                 mulPIn=mulPIn, f=f, pStep=pStep, dStep=dStep, PReg=PReg,
                 dp=dp, maxit=maxIt, tol=tol, xOrig=image, kMax=kMax)
-    print("\n\n\n\n")
-    
-################################################################################
-    # PNPD without momentum
-    print("PNPD without momentum")
-    x1,imRecPNPD_NM, rreListPNPD_NM, ssimListPNPD_NM, timeListPNPD_NM, gammaListPNPD_NM, gammaFFBSListPNPD_NM, dpStopIndexPNPD_NM\
-         = PNPD(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT,
-                mulPIn=mulPIn, f=f, pStep=pStep, dStep=dStep, PReg=PReg,
-                dp=dp, maxit=maxIt, tol=tol, xOrig=image, kMax=kMax, momentum=False)
+            x1_Kl.append(x1)
+            imRecPNPD_Kl.append(imRecPNPD)
+            rreListPNPD_Kl.append(rreListPNPD)
+            ssimListPNPD_Kl.append(ssimListPNPD)
+            timeListPNPD_Kl.append(timeListPNPD)
+            dpStopIndexPNPD_Kl.append(dpStopIndexPNPD)
+            print("\n\n\n\n")
+        x1_K.append(x1_Kl)
+        imRecPNPD_K.append(imRecPNPD_Kl)
+        rreListPNPD_K.append(rreListPNPD_Kl)
+        ssimListPNPD_K.append(ssimListPNPD_Kl)
+        timeListPNPD_K.append(timeListPNPD_Kl)
+        dpStopIndexPNPD_K.append(dpStopIndexPNPD_Kl)
+    np.savez(f"./grayscalePNPD_K.npz", x1_K=x1_K, imRecPNPD_K=imRecPNPD_K, rreListPNPD_K=rreListPNPD_K, ssimListPNPD_K=ssimListPNPD_K, timeListPNPD_K=timeListPNPD_K, dpStopIndexPNPD_K=dpStopIndexPNPD_K, kMaxValues=kMaxValues, lamValues=lamValues)
+        
 
-    np.savez("./grayscalePNPD.npz", imRecPNPD=imRecPNPD, rreListPNPD=rreListPNPD, ssimListPNPD=ssimListPNPD, timeListPNPD=timeListPNPD, dpStopIndexPNPD=dpStopIndexPNPD, gammaListPNPD=gammaListPNPD, gammaFFBSListPNPD=gammaFFBSListPNPD,\
-                imRecPNPD_NM=imRecPNPD_NM, rreListPNPD_NM=rreListPNPD_NM, ssimListPNPD_NM=ssimListPNPD_NM, timeListPNPD_NM=timeListPNPD_NM, dpStopIndexPNPD_NM=dpStopIndexPNPD_NM, gammaListPNPD_NM=gammaListPNPD_NM, gammaFFBSListPNPD_NM=gammaFFBSListPNPD_NM)
