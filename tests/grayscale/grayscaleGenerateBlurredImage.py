@@ -33,6 +33,7 @@ if __name__ == '__main__':
 
     # Generate PSF
     psf = generatePsfMatrix(n, 1.6)
+    psfBT = psf.copy()
     # Center PSF
     psf = np.roll(psf, (-psf.shape[0] // 2, -psf.shape[0] // 2), axis=(0, 1))
     
@@ -54,4 +55,4 @@ if __name__ == '__main__':
     psfAbsSq = psfFFTC * psfFFT
 
     # Save data
-    np.savez('./grayscaleBlurred.npz', conv=conv, noise=noise, b=b, bFFT=bFFT, psf=psf, psfFFT=psfFFT, psfFFTC=psfFFTC, psfAbsSq=psfAbsSq, image=image, noiseNormSqd=noiseNormSqd)
+    np.savez('./grayscaleBlurred.npz', conv=conv, noise=noise, b=b, bFFT=bFFT, psf=psf, psfBT=psfBT, psfFFT=psfFFT, psfFFTC=psfFFTC, psfAbsSq=psfAbsSq, image=image, noiseNormSqd=noiseNormSqd)
