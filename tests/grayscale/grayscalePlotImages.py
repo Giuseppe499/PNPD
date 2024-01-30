@@ -79,7 +79,7 @@ plt.figure()
 plt.axis('off')
 plt.imshow(image, cmap='gray', vmin = 0, vmax = 1)
 plt.title('Original Image')
-plt.savefig(savePath('grayOriginalImage.pdf'), bbox_inches='tight', dpi=300)
+plt.savefig(savePath('grayOriginalImage.pdf'), bbox_inches='tight', dpi=600)
 
 # Plot PSF
 cropSize = 16
@@ -131,23 +131,23 @@ def plotReconstruction(imRec, title):
     
 # Plot blurred image
 plotReconstruction(b, 'Blurred Image')
-plt.savefig(savePath('grayBlurredImage.pdf'), bbox_inches='tight', dpi=300)
+plt.savefig(savePath('grayBlurredImage.pdf'), bbox_inches='tight', dpi=600)
 
 # Plot NPD reconstruction
 plotReconstruction(imRecNPD, 'NPD Reconstruction')
-plt.savefig(savePath('grayNPD_Reconstruction.pdf'), bbox_inches='tight', dpi=300)
+plt.savefig(savePath('grayNPD_Reconstruction.pdf'), bbox_inches='tight', dpi=600)
 
 # Plot NPD without momentum reconstruction
 plotReconstruction(imRecNPD_NM, 'NPD without momentum Reconstruction')
-plt.savefig(savePath('grayNPD_NM_Reconstruction.pdf'), bbox_inches='tight', dpi=300)
+plt.savefig(savePath('grayNPD_NM_Reconstruction.pdf'), bbox_inches='tight', dpi=600)
 
 # Plot PNPD reconstruction
 plotReconstruction(imRecPNPD, 'PNPD Reconstruction')
-plt.savefig(savePath('grayPNPD_Reconstruction.pdf'), bbox_inches='tight', dpi=300)
+plt.savefig(savePath('grayPNPD_Reconstruction.pdf'), bbox_inches='tight', dpi=600)
 
 # Plot PNPD without momentum reconstruction
 plotReconstruction(imRecPNPD_NM, 'PNPD without momentum Reconstruction')
-plt.savefig(savePath('grayPNPD_NM_Reconstruction.pdf'), bbox_inches='tight', dpi=300)
+plt.savefig(savePath('grayPNPD_NM_Reconstruction.pdf'), bbox_inches='tight', dpi=600)
 
 if show:
     plt.show()
