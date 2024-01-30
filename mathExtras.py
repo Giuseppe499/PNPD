@@ -120,7 +120,8 @@ def generatePsfMatrix(size: int, sigma: float) -> np.array:
     return psfMatrix
 
 def centerCrop(image, target_size=(256, 256)):
-    h, w, _ = image.shape
+    h = image.shape[0]
+    w = image.shape[1]
     th, tw = target_size
 
     # Calculate the starting point for the crop
