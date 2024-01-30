@@ -82,7 +82,7 @@ plt.title('Original Image')
 plt.savefig(savePath('grayOriginalImage.pdf'), bbox_inches='tight', dpi=300)
 
 # Plot PSF
-cropSize = 32
+cropSize = 16
 plt.figure()
 plt.axis('off')
 plt.imshow(centerCrop(psfBT, (cropSize, cropSize)), cmap='gray')
