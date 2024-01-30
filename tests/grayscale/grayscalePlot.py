@@ -1,1 +1,1 @@
-from tests.grayscale import grayscalePlotReconstructions, grayscalePlotNPD, grayscalePlotPNPD, grayscalePlotNPDIT, grayscalePlotAllMethods
+from tests.grayscale import grayscalePlotImages, grayscalePlotNPD, grayscalePlotPNPD, grayscalePlotNPDIT, grayscalePlotAllMethods

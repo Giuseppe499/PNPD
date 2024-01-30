@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from tests.plotExtras import *
+from mathExtras import centerCrop
 import numpy as np
 from matplotlib import pyplot as plt
 from skimage.metrics import structural_similarity as ssim
@@ -25,6 +26,7 @@ from skimage.metrics import structural_similarity as ssim
 with np.load('grayscaleBlurred.npz') as data:
     b = data['b']
     psf = data['psf']
+    psfBT = data['psfBT']
     image = data['image']
     conv = data['conv']
     noise = data['noise']
@@ -77,7 +79,30 @@ plt.figure()
 plt.axis('off')
 plt.imshow(image, cmap='gray', vmin = 0, vmax = 1)
 plt.title('Original Image')
-plt.savefig(savePath('grayOriginalImage.pdf'), bbox_inches='tight')
+plt.savefig(savePath('grayOriginalImage.pdf'), bbox_inches='tight', dpi=300)
+
+# Plot PSF
+cropSize = 32
+plt.figure()
+plt.axis('off')
+plt.imshow(centerCrop(psfBT, (cropSize, cropSize)), cmap='gray')
+plt.title(f'PSF (cropped to {cropSize}x{cropSize})')
+plt.savefig(savePath('grayPSF.pdf'), bbox_inches='tight', dpi=300)
+
+# Plot image * PSF = conv
+fig, ax = plt.subplots(1, 3)
+fig.subplots_adjust(wspace=0.5)
+for axis in ax:
+    axis.axis('off')
+ax[0].imshow(image, cmap='gray', vmin = 0, vmax = 1)
+ax[0].set_title('$x$')
+ax[0].text(1.15, .5, "$\circledast$", fontsize=20, transform = ax[0].transAxes)
+ax[1].imshow(centerCrop(psfBT, (cropSize, cropSize)), cmap='gray')
+ax[1].set_title(f'PSF (cropped to {cropSize}x{cropSize})')
+ax[1].text(1.15, .5, "$=$", fontsize=20, transform = ax[1].transAxes)
+ax[2].imshow(conv, cmap='gray', vmin = 0, vmax = 1)
+ax[2].set_title('$b = x \circledast$ PSF')
+plt.savefig(savePath('grayPSFConv.pdf'), bbox_inches='tight', dpi=1200)
 
 # Plot conv + noise = blurred image
 fig, ax = plt.subplots(1, 3)
@@ -92,7 +117,7 @@ ax[1].set_title('$n$')
 ax[1].text(1.15, .5, "$=$", fontsize=20, transform = ax[1].transAxes)
 ax[2].imshow(b, cmap='gray', vmin = 0, vmax = 1)
 ax[2].set_title('$\\tilde b = b + n$')
-plt.savefig(savePath('grayBlurredPlusNoise.pdf'), bbox_inches='tight')
+plt.savefig(savePath('grayBlurredPlusNoise.pdf'), bbox_inches='tight', dpi=1200)
 
 def plotReconstruction(imRec, title):
     plt.figure()
@@ -106,61 +131,23 @@ def plotReconstruction(imRec, title):
     
 # Plot blurred image
 plotReconstruction(b, 'Blurred Image')
-plt.savefig(savePath('grayBlurredImage.pdf'), bbox_inches='tight')
+plt.savefig(savePath('grayBlurredImage.pdf'), bbox_inches='tight', dpi=300)
 
 # Plot NPD reconstruction
 plotReconstruction(imRecNPD, 'NPD Reconstruction')
-plt.savefig(savePath('grayNPD_Reconstruction.pdf'), bbox_inches='tight')
+plt.savefig(savePath('grayNPD_Reconstruction.pdf'), bbox_inches='tight', dpi=300)
 
 # Plot NPD without momentum reconstruction
 plotReconstruction(imRecNPD_NM, 'NPD without momentum Reconstruction')
-plt.savefig(savePath('grayNPD_NM_Reconstruction.pdf'), bbox_inches='tight')
+plt.savefig(savePath('grayNPD_NM_Reconstruction.pdf'), bbox_inches='tight', dpi=300)
 
 # Plot PNPD reconstruction
 plotReconstruction(imRecPNPD, 'PNPD Reconstruction')
-plt.savefig(savePath('grayPNPD_Reconstruction.pdf'), bbox_inches='tight')
+plt.savefig(savePath('grayPNPD_Reconstruction.pdf'), bbox_inches='tight', dpi=300)
 
 # Plot PNPD without momentum reconstruction
 plotReconstruction(imRecPNPD_NM, 'PNPD without momentum Reconstruction')
-plt.savefig(savePath('grayPNPD_NM_Reconstruction.pdf'), bbox_inches='tight')
-
-# # Plot RRE vs Iteration: NPD vs PNPD
-# plotLists([rreListNPD, rreListPNPD],
-#             stopIndices=[dpStopIndexNPD, dpStopIndexPNPD],
-#             labels=["NPD", "PNPD"],
-#             labelsStop=['Discrepancy principle stop' for _ in range(2)],
-#             title='RRE NPD vs PNPD',
-#             xlabel='Iteration', ylabel='RRE',
-#             saveName='grayRRE_NPDvsPNPD_IT.pdf', semilogy=True)
-
-# # Plot RRE vs Time: NPD vs PNPD
-# plotLists([rreListNPD, rreListPNPD],
-#             X=[timeListNPD, timeListPNPD],
-#             stopIndices=[dpStopIndexNPD, dpStopIndexPNPD],
-#             labels=["NPD", "PNPD"],
-#             labelsStop=['Discrepancy principle stop' for _ in range(2)],
-#             title='RRE NPD vs PNPD',
-#             xlabel='Time (seconds)', ylabel='RRE',
-#             saveName='grayRRE_NPDvsPNPD_TIME.pdf', semilogy=True)
-
-# # Plot SSIM vs Iteration: NPD vs PNPD
-# plotLists([ssimListNPD, ssimListPNPD],
-#             stopIndices=[dpStopIndexNPD, dpStopIndexPNPD],
-#             labels=["NPD", "PNPD"],
-#             labelsStop=['Discrepancy principle stop' for _ in range(2)],
-#             title='SSIM NPD vs PNPD',
-#             xlabel='Iteration', ylabel='SSIM',
-#             saveName='graySSIM_NPDvsPNPD_IT.pdf')
-
-# # Plot SSIM vs Time: NPD vs PNPD
-# plotLists([ssimListNPD, ssimListPNPD],
-#             X=[timeListNPD, timeListPNPD],
-#             stopIndices=[dpStopIndexNPD, dpStopIndexPNPD],
-#             labels=["NPD", "PNPD"],
-#             labelsStop=['Discrepancy principle stop' for _ in range(2)],
-#             title='SSIM NPD vs PNPD',
-#             xlabel='Time (seconds)', ylabel='SSIM',
-#             saveName='graySSIM_NPDvsPNPD_TIME.pdf')
+plt.savefig(savePath('grayPNPD_NM_Reconstruction.pdf'), bbox_inches='tight', dpi=300)
 
 if show:
     plt.show()
