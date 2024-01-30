@@ -26,6 +26,8 @@ with np.load('grayscaleBlurred.npz') as data:
     b = data['b']
     psf = data['psf']
     image = data['image']
+    conv = data['conv']
+    noise = data['noise']
     bSSIM = ssim(b, image, data_range=1)
     bRRE = np.linalg.norm(b - image) / np.linalg.norm(image)
 
@@ -72,12 +74,29 @@ show = False
 
 # Plot original image
 plt.figure()
+plt.axis('off')
 plt.imshow(image, cmap='gray', vmin = 0, vmax = 1)
 plt.title('Original Image')
 plt.savefig(savePath('grayOriginalImage.pdf'), bbox_inches='tight')
 
+# Plot conv + noise = blurred image
+fig, ax = plt.subplots(1, 3)
+fig.subplots_adjust(wspace=0.5)
+for axis in ax:
+    axis.axis('off')
+ax[0].imshow(conv, cmap='gray', vmin = 0, vmax = 1)
+ax[0].set_title('$b$')
+ax[0].text(1.15, .5, "$+$", fontsize=20, transform = ax[0].transAxes)
+ax[1].imshow(noise, cmap='gray', vmin = noise.min()/2, vmax = noise.max()/2)
+ax[1].set_title('$n$')
+ax[1].text(1.15, .5, "$=$", fontsize=20, transform = ax[1].transAxes)
+ax[2].imshow(b, cmap='gray', vmin = 0, vmax = 1)
+ax[2].set_title('$\\tilde b = b + n$')
+plt.savefig(savePath('grayBlurredPlusNoise.pdf'), bbox_inches='tight')
+
 def plotReconstruction(imRec, title):
     plt.figure()
+    plt.axis('off')
     plt.imshow(imRec, cmap='gray', vmin = 0, vmax = 1)
     plt.title(title)
     ax = plt.gca()

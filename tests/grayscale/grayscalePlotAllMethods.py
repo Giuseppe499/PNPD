@@ -66,47 +66,66 @@ with np.load('grayscalePNPD.npz') as data:
     gammaListPNPD = data['gammaListPNPD']
     gammaFFBSListPNPD = data['gammaFFBSListPNPD']
 
+with np.load('grayscaleNPDIT.npz') as data:
+    imRecNPDIT = data['imRecNPDIT']
+    rreListNPDIT = addIt0(data['rreListNPDIT'], bRRE)
+    ssimListNPDIT = addIt0(data['ssimListNPDIT'], bSSIM)
+    ssimNPDIT = ssim(imRecNPDIT, image, data_range=1)
+    timeListNPDIT = relTimetoAbsTime(data['timeListNPDIT'])
+    dpStopIndexNPDIT = data['dpStopIndexNPDIT']
+    rreRecNPDIT = rreListNPDIT[dpStopIndexNPDIT]
+    ssimRecNPDIT = ssimListNPDIT[dpStopIndexNPDIT]
+
+    imRecNPDIT_NM = data['imRecNPDIT_NM']
+    rreListNPDIT_NM = addIt0(data['rreListNPDIT_NM'], bRRE)
+    ssimListNPDIT_NM = addIt0(data['ssimListNPDIT_NM'], bSSIM)
+    timeListNPDIT_NM = relTimetoAbsTime(data['timeListNPDIT_NM'])
+    dpStopIndexNPDIT_NM = data['dpStopIndexNPDIT_NM']
+
+    gammaListNPDIT = data['gammaListNPDIT']
+    gammaFFBSListNPDIT = data['gammaFFBSListNPDIT']
+
     
 
 show = False
 
-# Plot RRE vs Iteration: NPD vs PNPD
-plotLists([rreListNPD, rreListPNPD],
-            stopIndices=[dpStopIndexNPD, dpStopIndexPNPD],
-            labels=["NPD", "PNPD"],
-            labelsStop=['Discrepancy principle stop' for _ in range(2)],
-            title='RRE NPD vs PNPD',
+# Plot RRE vs Iteration: NPD vs PNPD vs NPDIT
+plotLists([rreListNPD, rreListPNPD, rreListNPDIT],
+            stopIndices=[dpStopIndexNPD, dpStopIndexPNPD, dpStopIndexNPDIT],
+            labels=["NPD", "PNPD", "NPDIT"],
+            labelsStop=['Discrepancy principle stop' for _ in range(3)],
+            title='RRE NPD vs PNPD vs NPDIT',
             xlabel='Iteration', ylabel='RRE',
-            saveName='grayRRE_NPDvsPNPD_IT.pdf', semilogy=True)
+            saveName='grayRRE_NPDvsPNPDvsNPDIT_IT.pdf', semilogy=True)
 
-# Plot RRE vs Time: NPD vs PNPD
-plotLists([rreListNPD, rreListPNPD],
-            X=[timeListNPD, timeListPNPD],
-            stopIndices=[dpStopIndexNPD, dpStopIndexPNPD],
-            labels=["NPD", "PNPD"],
-            labelsStop=['Discrepancy principle stop' for _ in range(2)],
-            title='RRE NPD vs PNPD',
+# Plot RRE vs Time: NPD vs PNPD vs NPDIT
+plotLists([rreListNPD, rreListPNPD, rreListNPDIT],
+            X=[timeListNPD, timeListPNPD, timeListNPDIT],
+            stopIndices=[dpStopIndexNPD, dpStopIndexPNPD, dpStopIndexNPDIT],
+            labels=["NPD", "PNPD", "NPDIT"],
+            labelsStop=['Discrepancy principle stop' for _ in range(3)],
+            title='RRE NPD vs PNPD vs NPDIT',
             xlabel='Time (seconds)', ylabel='RRE',
-            saveName='grayRRE_NPDvsPNPD_TIME.pdf', semilogy=True)
+            saveName='grayRRE_NPDvsPNPDvsNPDIT_TIME.pdf', semilogy=True)
 
-# Plot SSIM vs Iteration: NPD vs PNPD
-plotLists([ssimListNPD, ssimListPNPD],
-            stopIndices=[dpStopIndexNPD, dpStopIndexPNPD],
-            labels=["NPD", "PNPD"],
-            labelsStop=['Discrepancy principle stop' for _ in range(2)],
-            title='SSIM NPD vs PNPD',
+# Plot SSIM vs Iteration: NPD vs PNPD vs NPDIT
+plotLists([ssimListNPD, ssimListPNPD, ssimListNPDIT],
+            stopIndices=[dpStopIndexNPD, dpStopIndexPNPD, dpStopIndexNPDIT],
+            labels=["NPD", "PNPD", "NPDIT"],
+            labelsStop=['Discrepancy principle stop' for _ in range(3)],
+            title='SSIM NPD vs PNPD vs NPDIT',
             xlabel='Iteration', ylabel='SSIM',
-            saveName='graySSIM_NPDvsPNPD_IT.pdf')
+            saveName='graySSIM_NPDvsPNPDvsNPDIT_IT.pdf')
 
-# Plot SSIM vs Time: NPD vs PNPD
-plotLists([ssimListNPD, ssimListPNPD],
-            X=[timeListNPD, timeListPNPD],
-            stopIndices=[dpStopIndexNPD, dpStopIndexPNPD],
-            labels=["NPD", "PNPD"],
-            labelsStop=['Discrepancy principle stop' for _ in range(2)],
-            title='SSIM NPD vs PNPD',
+# Plot SSIM vs Time: NPD vs PNPD vs NPDIT
+plotLists([ssimListNPD, ssimListPNPD, ssimListNPDIT],
+            X=[timeListNPD, timeListPNPD, timeListNPDIT],
+            stopIndices=[dpStopIndexNPD, dpStopIndexPNPD, dpStopIndexNPDIT],
+            labels=["NPD", "PNPD", "NPDIT"],
+            labelsStop=['Discrepancy principle stop' for _ in range(3)],
+            title='SSIM NPD vs PNPD vs NPDIT',
             xlabel='Time (seconds)', ylabel='SSIM',
-            saveName='graySSIM_NPDvsPNPD_TIME.pdf')
+            saveName='graySSIM_NPDvsPNPDvsNPDIT_TIME.pdf')
 
 if show:
     plt.show()

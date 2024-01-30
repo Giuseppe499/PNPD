@@ -18,53 +18,49 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import numpy as np
-from numpy.linalg import norm
 from mathExtras import (sInner, gradLeastSquares, grad2D, div2D, proxhsTV,
                         fftConvolve2D)
 from solvers import NPD
-from skimage.metrics import structural_similarity as ssim
-import time
 
-if __name__ == '__main__':
-    with np.load('grayscaleBlurred.npz') as data:
-        b = data['b']
-        bFFT = data['bFFT']
-        psf = data['psf']
-        psfFFT = data['psfFFT']
-        psfFFTC = data['psfFFTC']
-        image = data['image']
-        noiseNormSqd = data['noiseNormSqd']
+with np.load('grayscaleBlurred.npz') as data:
+    b = data['b']
+    bFFT = data['bFFT']
+    psf = data['psf']
+    psfFFT = data['psfFFT']
+    psfFFTC = data['psfFFTC']
+    image = data['image']
+    noiseNormSqd = data['noiseNormSqd']
 
-    maxIt = 150  # Maximum number of iterations
-    tol = noiseNormSqd  # Tolerance
-    lam = 1e-3  # TV regularization parameter
-    pStep = 1  # Primal step length
-    dStep = 1 / 8  # Dual step length
-    dp = 1.01 # Discrepancy principle parameter
-    kMax = 1 # Number of dual iterations
+maxIt = 150  # Maximum number of iterations
+tol = noiseNormSqd  # Tolerance
+lam = 1e-3  # TV regularization parameter
+pStep = 1  # Primal step length
+dStep = 1 / 8  # Dual step length
+dp = 1.01 # Discrepancy principle parameter
+kMax = 1 # Number of dual iterations
 
-    
 
-    gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT, psfFFTC)
-    proxhs=lambda alpha, x: proxhsTV(lam, x)
-    mulW=grad2D
-    mulWT=div2D
-    f=lambda x: sInner((fftConvolve2D(x, psf) - b).ravel())
-    rho = lambda i: 1 / (i + 1) ** 1.1
 
-    ################################################################################
-    # NPD
-    print("NPD")
-    x1,imRecNPD, rreListNPD, ssimListNPD, timeListNPD, gammaListNPD, gammaFFBSListNPD, dpStopIndexNPD = \
-    NPD(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT, f=f, pStep=pStep, dStep=dStep, kMax=kMax, rho=rho, maxit=maxIt, tol=tol, dp=dp, xOrig=image)
-    print("\n\n\n\n")
+gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT, psfFFTC)
+proxhs=lambda alpha, x: proxhsTV(lam, x)
+mulW=grad2D
+mulWT=div2D
+f=lambda x: sInner((fftConvolve2D(x, psf) - b).ravel())
+rho = lambda i: 1 / (i + 1) ** 1.1
 
-    ################################################################################
-    # NPD without momentum
-    print("NPD without momentum")
-    x1,imRecNPD_NM, rreListNPD_NM, ssimListNPD_NM, timeListNPD_NM, gammaListNPD_NM, gammaFFBSListNPD_NM, dpStopIndexNPD_NM = \
-    NPD(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT, f=f, pStep=pStep, dStep=dStep, kMax=kMax, rho=rho, maxit=maxIt, tol=tol, dp=dp, xOrig=image, momentum=False)
-    print("\n\n\n\n")
+################################################################################
+# NPD
+print("NPD")
+x1,imRecNPD, rreListNPD, ssimListNPD, timeListNPD, gammaListNPD, gammaFFBSListNPD, dpStopIndexNPD = \
+NPD(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT, f=f, pStep=pStep, dStep=dStep, kMax=kMax, rho=rho, maxit=maxIt, tol=tol, dp=dp, xOrig=image)
+print("\n\n\n\n")
 
-    np.savez("./grayscaleNPD.npz", imRecNPD=imRecNPD, rreListNPD=rreListNPD, ssimListNPD=ssimListNPD, timeListNPD=timeListNPD, dpStopIndexNPD=dpStopIndexNPD, gammaListNPD=gammaListNPD, gammaFFBSListNPD=gammaFFBSListNPD,\
-             imRecNPD_NM=imRecNPD_NM, rreListNPD_NM=rreListNPD_NM, ssimListNPD_NM=ssimListNPD_NM, timeListNPD_NM=timeListNPD_NM, dpStopIndexNPD_NM=dpStopIndexNPD_NM, gammaListNPD_NM=gammaListNPD_NM, gammaFFBSListNPD_NM=gammaFFBSListNPD_NM)
+################################################################################
+# NPD without momentum
+print("NPD without momentum")
+x1,imRecNPD_NM, rreListNPD_NM, ssimListNPD_NM, timeListNPD_NM, gammaListNPD_NM, gammaFFBSListNPD_NM, dpStopIndexNPD_NM = \
+NPD(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT, f=f, pStep=pStep, dStep=dStep, kMax=kMax, rho=rho, maxit=maxIt, tol=tol, dp=dp, xOrig=image, momentum=False)
+print("\n\n\n\n")
+
+np.savez("./grayscaleNPD.npz", imRecNPD=imRecNPD, rreListNPD=rreListNPD, ssimListNPD=ssimListNPD, timeListNPD=timeListNPD, dpStopIndexNPD=dpStopIndexNPD, gammaListNPD=gammaListNPD, gammaFFBSListNPD=gammaFFBSListNPD,\
+            imRecNPD_NM=imRecNPD_NM, rreListNPD_NM=rreListNPD_NM, ssimListNPD_NM=ssimListNPD_NM, timeListNPD_NM=timeListNPD_NM, dpStopIndexNPD_NM=dpStopIndexNPD_NM, gammaListNPD_NM=gammaListNPD_NM, gammaFFBSListNPD_NM=gammaFFBSListNPD_NM)

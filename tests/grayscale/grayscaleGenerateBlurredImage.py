@@ -35,12 +35,14 @@ if __name__ == '__main__':
     psf = generatePsfMatrix(n, 1.6)
     # Center PSF
     psf = np.roll(psf, (-psf.shape[0] // 2, -psf.shape[0] // 2), axis=(0, 1))
-    # Generate noise
-    noise = np.random.normal(size=image.shape)
-    noise *= 0.008
-    noiseNormSqd = sInner(noise.ravel())
+    
     # Generate blurred image
     conv = fftConvolve2D(image, psf)
+    
+    # Generate noise
+    noise = np.random.normal(size=image.shape)
+    noise *= 0.02 * np.linalg.norm(conv) / np.linalg.norm(noise)
+    noiseNormSqd = sInner(noise.ravel())
 
     # Add noise to blurred image
     b = np.clip(conv + noise, 0, 1)
@@ -52,4 +54,4 @@ if __name__ == '__main__':
     psfAbsSq = psfFFTC * psfFFT
 
     # Save data
-    np.savez('./grayscaleBlurred.npz', b=b, bFFT=bFFT, psf=psf, psfFFT=psfFFT, psfFFTC=psfFFTC, psfAbsSq=psfAbsSq, image=image, noiseNormSqd=noiseNormSqd)
+    np.savez('./grayscaleBlurred.npz', conv=conv, noise=noise, b=b, bFFT=bFFT, psf=psf, psfFFT=psfFFT, psfFFTC=psfFFTC, psfAbsSq=psfAbsSq, image=image, noiseNormSqd=noiseNormSqd)
