@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from tests.plotExtras import *
-from mathExtras import centerCrop
+from mathExtras import (centerCrop, generatePsfMatrix, fftConvolve2D)
 import numpy as np
 from matplotlib import pyplot as plt
 from skimage.metrics import structural_similarity as ssim
@@ -96,12 +96,12 @@ for axis in ax:
     axis.axis('off')
 ax[0].imshow(image, cmap='gray', vmin = 0, vmax = 1)
 ax[0].set_title('$x$')
-ax[0].text(1.15, .5, "$\circledast$", fontsize=20, transform = ax[0].transAxes)
+ax[0].text(1.05, .5, "$\circledast_{2D}$", fontsize=20, transform = ax[0].transAxes)
 ax[1].imshow(centerCrop(psfBT, (cropSize, cropSize)), cmap='gray')
-ax[1].set_title(f'PSF (cropped to {cropSize}x{cropSize})')
+ax[1].set_title(f'PSF\n(center crop of size {cropSize}x{cropSize})')
 ax[1].text(1.15, .5, "$=$", fontsize=20, transform = ax[1].transAxes)
 ax[2].imshow(conv, cmap='gray', vmin = 0, vmax = 1)
-ax[2].set_title('$b = x \circledast$ PSF')
+ax[2].set_title('$b = x \circledast_{2D}$ PSF')
 plt.savefig(savePath('grayPSFConv.pdf'), bbox_inches='tight', dpi=1200)
 
 # Plot conv + noise = blurred image
@@ -119,7 +119,25 @@ ax[2].imshow(b, cmap='gray', vmin = 0, vmax = 1)
 ax[2].set_title('$\\tilde b = b + n$')
 plt.savefig(savePath('grayBlurredPlusNoise.pdf'), bbox_inches='tight', dpi=1200)
 
-def plotReconstruction(imRec, title):
+# Plot image * PSF = conv Convolution example
+psfEXBT = generatePsfMatrix(image.shape[0], 10)
+psfEX = np.roll(psfEXBT, (-psfEXBT.shape[0] // 2, -psfEXBT.shape[0] // 2), axis=(0, 1))
+convEX = fftConvolve2D(image, psfEX)
+fig, ax = plt.subplots(1, 3)
+fig.subplots_adjust(wspace=0.5)
+for axis in ax:
+    axis.axis('off')
+ax[0].imshow(image, cmap='gray', vmin = 0, vmax = 1)
+ax[0].set_title('$x$')
+ax[0].text(1.05, .5, "$\circledast_{2D}$", fontsize=20, transform = ax[0].transAxes)
+ax[1].imshow(psfEXBT, cmap='gray')
+ax[1].set_title(f'$u$')
+ax[1].text(1.15, .5, "$=$", fontsize=20, transform = ax[1].transAxes)
+ax[2].imshow(convEX, cmap='gray', vmin = 0, vmax = 1)
+ax[2].set_title('$x \circledast_{2D}$ u')
+plt.savefig(savePath('grayPSFConvExample.pdf'), bbox_inches='tight', dpi=1200)
+
+def plotReconstruction(imRec, title, iteration = None):
     plt.figure()
     plt.axis('off')
     plt.imshow(imRec, cmap='gray', vmin = 0, vmax = 1)
@@ -127,26 +145,32 @@ def plotReconstruction(imRec, title):
     ax = plt.gca()
     SSIM = ssim(imRec, image, data_range=1)
     rre = np.linalg.norm(imRec - image) / np.linalg.norm(image)
-    ax.text(boxPos[0], boxPos[1], f"SSIM: {SSIM:.4f}\nRRE:  {rre:.4f}", bbox=props, transform = ax.transAxes, fontsize=12)
+    vOffset = 0
+    if iteration is not None:
+        text = f"Iteration: {iteration}\nRRE: {rre:.4f}\nSSIM: {SSIM:.4f}"
+        vOffset = -0.05
+    else:
+        text = f"RRE: {rre:.4f}\nSSIM: {SSIM:.4f}"
+    ax.text(boxPos[0], boxPos[1]+vOffset, text, bbox=props, transform = ax.transAxes, fontsize=12)
     
 # Plot blurred image
 plotReconstruction(b, 'Blurred Image')
 plt.savefig(savePath('grayBlurredImage.pdf'), bbox_inches='tight', dpi=600)
 
 # Plot NPD reconstruction
-plotReconstruction(imRecNPD, 'NPD Reconstruction')
+plotReconstruction(imRecNPD, 'NPD Reconstruction', iteration =  dpStopIndexNPD)
 plt.savefig(savePath('grayNPD_Reconstruction.pdf'), bbox_inches='tight', dpi=600)
 
 # Plot NPD without momentum reconstruction
-plotReconstruction(imRecNPD_NM, 'NPD without momentum Reconstruction')
+plotReconstruction(imRecNPD_NM, 'NPD without momentum Reconstruction', iteration =  dpStopIndexNPD_NM)
 plt.savefig(savePath('grayNPD_NM_Reconstruction.pdf'), bbox_inches='tight', dpi=600)
 
 # Plot PNPD reconstruction
-plotReconstruction(imRecPNPD, 'PNPD Reconstruction')
+plotReconstruction(imRecPNPD, 'PNPD Reconstruction', iteration =  dpStopIndexPNPD)
 plt.savefig(savePath('grayPNPD_Reconstruction.pdf'), bbox_inches='tight', dpi=600)
 
 # Plot PNPD without momentum reconstruction
-plotReconstruction(imRecPNPD_NM, 'PNPD without momentum Reconstruction')
+plotReconstruction(imRecPNPD_NM, 'PNPD without momentum Reconstruction', iteration =  dpStopIndexPNPD_NM)
 plt.savefig(savePath('grayPNPD_NM_Reconstruction.pdf'), bbox_inches='tight', dpi=600)
 
 if show:
