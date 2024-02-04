@@ -34,7 +34,7 @@ with np.load('grayscaleBlurred.npz') as data:
 
 maxIt = 150 # Maximum number of iterations
 tol = noiseNormSqd # Tolerance
-lam = 1e-3 # TV regularization parameter
+lam = 1e-2 # TV regularization parameter
 pStep = 1  # Primal step length
 dStep = 1 / 8  # Dual step length
 PReg = 1e-1  # Parameter for the preconditioner P
