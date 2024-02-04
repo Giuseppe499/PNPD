@@ -70,7 +70,25 @@ with np.load('grayscalePNPD.npz') as data:
     gammaListPNPD = data['gammaListPNPD']
     gammaFFBSListPNPD = data['gammaFFBSListPNPD']
 
-    
+with np.load('grayscaleNPDIT.npz') as data:
+    imRecNPDIT = data['imRecNPDIT']
+    rreListNPDIT = addIt0(data['rreListNPDIT'], bRRE)
+    ssimListNPDIT = addIt0(data['ssimListNPDIT'], bSSIM)
+    ssimNPDIT = ssim(imRecNPDIT, image, data_range=1)
+    timeListNPDIT = relTimetoAbsTime(data['timeListNPDIT'])
+    dpStopIndexNPDIT = data['dpStopIndexNPDIT']
+    rreRecNPDIT = rreListNPDIT[dpStopIndexNPDIT]
+    ssimRecNPDIT = ssimListNPDIT[dpStopIndexNPDIT]
+
+    imRecNPDIT_NM = data['imRecNPDIT_NM']
+    rreListNPDIT_NM = addIt0(data['rreListNPDIT_NM'], bRRE)
+    ssimListNPDIT_NM = addIt0(data['ssimListNPDIT_NM'], bSSIM)
+    timeListNPDIT_NM = relTimetoAbsTime(data['timeListNPDIT_NM'])
+    dpStopIndexNPDIT_NM = data['dpStopIndexNPDIT_NM']
+
+    gammaListNPDIT = data['gammaListNPDIT']
+    gammaFFBSListNPDIT = data['gammaFFBSListNPDIT']
+  
 
 show = False
 
@@ -172,6 +190,10 @@ plt.savefig(savePath('grayPNPD_Reconstruction.pdf'), bbox_inches='tight', dpi=60
 # Plot PNPD without momentum reconstruction
 plotReconstruction(imRecPNPD_NM, 'PNPD without momentum Reconstruction', iteration =  dpStopIndexPNPD_NM)
 plt.savefig(savePath('grayPNPD_NM_Reconstruction.pdf'), bbox_inches='tight', dpi=600)
+
+# Plot NPDIT reconstruction
+plotReconstruction(imRecNPDIT, 'NPDIT Reconstruction', iteration =  dpStopIndexNPDIT)
+plt.savefig(savePath('grayNPDIT_Reconstruction.pdf'), bbox_inches='tight', dpi=600)
 
 if show:
     plt.show()
