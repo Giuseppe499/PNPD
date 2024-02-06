@@ -21,8 +21,10 @@ import numpy as np
 from numpy.fft import fft2, ifft2
 
 
-def sInner(x: np.array):
-    return np.inner(x, x)
+def sInner(x: np.array, y: np.array = None):
+    if y is not None:
+        return np.inner(x.ravel(), y.ravel())
+    return np.inner(x.ravel(), x.ravel())
 
 
 def softTreshold(alpha, x: np.array):
@@ -48,6 +50,9 @@ def mulPInLeastSquaresRGB(mu, x, psfAbsSq):
     for i in range(3):
         mul[:,:,i] = mulPInLeastSquares(mu, x[:,:,i], psfAbsSq)
     return mul
+
+def mulPLeastSquares(mu, x, psfAbsSq):
+    return np.real(ifft2(fft2(x) * (psfAbsSq + mu)))
 
 def grad2D(m: np.array):
     dx = np.roll(m, -1, axis=-2) - m

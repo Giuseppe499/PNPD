@@ -23,6 +23,7 @@ import numpy as np
 from numpy.linalg import norm
 from numpy.fft import fft2, ifft2
 from skimage.metrics import structural_similarity as ssim
+from mathExtras import sInner
 
 import time
 
@@ -231,33 +232,63 @@ def PNPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
     return x1, imRec, rreList, ssimList, timeList, gammaList, gammaFFBSList, dpStopIndex
 
 def NPDIT_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
-               mulWT: Callable, mulPIn: Callable, pStep: float, dStep: float,
-               PReg: float, t0: float, C: float, rho_i: float, kMax: int = 1):
+          mulWT: Callable, mulPIn: Callable, mulP: Callable, f: Callable,
+          L: float, dStep: float, PReg: float, t0: float, C: float, rho_i: float, kMax: int, eps: float, dInv):
     t = .5 + .5 * np.sqrt(1 + 4 * t0 * t0)
     gammaFFBS = (t0 - 1) / t
     gamma = min(gammaFFBS, C*rho_i / (norm(x1 - x0)))
     xBar = x1 + gamma * (x1 - x0)
     # Primal Dual Iteration
     #k = 0
-    x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulPIn(PReg, mulWT(y0))
-    y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
-    y0 = y1
-    x1Sum = np.zeros(x1.shape)
-    for k in range(1,kMax):
+    while True:
+        pStep = eps / L
         x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulPIn(PReg, mulWT(y0))
-        x1Sum += x2
         y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
         y0 = y1
-    x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulWT(y0)
-    x1Sum += x2
-    x2 = x1Sum / kMax
-    return x1, x2, t, y1, gamma, gammaFFBS
+        x1Sum = np.zeros(x1.shape)
+        for k in range(1,kMax):
+            x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulPIn(PReg, mulWT(y0))
+            x1Sum += x2
+            y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
+            y0 = y1
+        x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulWT(y0)
+        x1Sum += x2
+        x2 = x1Sum / kMax
+        if f(x2) <= f(xBar) + sInner(gradf(xBar), x2 - xBar) + L / 2 * sInner(x2 - xBar, mulP(PReg, x2 - xBar)):
+            break
+        L *= dInv
+    return x1, x2, t, y1, L, gamma, gammaFFBS
 
+def NPDIT_step_no_momentum(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
+            mulWT: Callable, mulPIn: Callable, mulP: Callable, f: Callable,
+            L: float, dStep: float, PReg: float, t0: float, C: float, rho_i: float, kMax: int, eps: float, dInv):
+        # Primal Dual Iteration
+        #k = 0
+        while True:
+            pStep = eps / L
+            x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulWT(y0)
+            y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
+            y0 = y1
+            x1Sum = np.zeros(x1.shape)
+            for k in range(1,kMax):
+                x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulWT(y0)
+                x1Sum += x2
+                y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
+                y0 = y1
+            x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulWT(y0)
+            x1Sum += x2
+            x2 = x1Sum / kMax
+            if f(x2) <= f(x1) + sInner(gradf(x1), x2 - x1) + L / 2 * sInner(x2 - x1, mulP(PReg, x2 - x1)):
+                break
+            L *= dInv
+        return x1, x2, None, y1, L, 0, 0
 
 def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
-          mulWT: Callable, mulPIn: Callable, f: Callable,
-          pStep: float, dStep: float, PReg: float, xOrig, kMax: int = 1,
-          t0: float = 1, rho: Callable = lambda i: 1/(i+1)**1.1, tol: float = 1e-4, dp: float = 1, maxit: int = 100, momentum: bool = True):
+          mulWT: Callable, mulPIn: Callable, mulP: Callable, f: Callable,
+          L: float, normWsqrd: float, PReg: float, xOrig, kMax: int = 1,
+          t0: float = 1, eps: float = 0.99, dInv = 2,
+          rho: Callable = lambda i: 1/(i+1)**1.1, tol: float = 1e-4,
+          dp: float = 1, maxit: int = 100, momentum: bool = True):
     """
     Nested Primal Dual (FISTA-like algorithm)
     Approximate argmin_{x \in R^d} f(x) + h(Wx) where f is differentiable and
@@ -274,16 +305,17 @@ def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
 
     x1 = x0
     y0 = np.zeros(proxhs(1, mulW(x0)).shape)
+    dStep = eps * PReg / normWsqrd
 
-    Step = NPDIT_step if momentum else PNPD_step_no_momentum
+    Step = NPDIT_step if momentum else NPDIT_step_no_momentum
 
     C = 0
     for i in range(maxit):
         start = time.process_time()
-        x0, x1, t0, y0, gamma, gammaFFBS = Step(x0=x0, x1=x1, y0=y0, gradf=gradf, proxhs=proxhs,
-                                mulW=mulW, mulWT=mulWT, mulPIn=mulPIn, pStep=pStep,
+        x0, x1, t0, y0, L, gamma, gammaFFBS = Step(x0=x0, x1=x1, y0=y0, gradf=gradf, proxhs=proxhs,
+                                mulW=mulW, mulWT=mulWT, mulPIn=mulPIn, mulP=mulP, f=f, L=L,
                                 dStep=dStep, PReg=PReg, t0=t0, C=C, rho_i=rho(i),
-                                kMax=kMax)
+                                kMax=kMax, eps=eps, dInv=dInv)
         elapsed = time.process_time() - start
         if i == 0:
             C = 10 * norm(x1 - x0)

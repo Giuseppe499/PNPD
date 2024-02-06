@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 from mathExtras import (sInner, gradLeastSquares, grad2D, div2D, proxhsTV,
-                        fftConvolve2D, mulPInLeastSquares)
+                        fftConvolve2D, mulPInLeastSquares, mulPLeastSquares)
 from solvers import NPDIT
 
 with np.load('grayscaleBlurred.npz') as data:
@@ -35,8 +35,8 @@ with np.load('grayscaleBlurred.npz') as data:
 maxIt = 150 # Maximum number of iterations
 tol = noiseNormSqd # Tolerance
 lam = 1e-3 # TV regularization parameter
-pStep = 1  # Primal step length
-dStep = 1 / 8  # Dual step length
+L = 0.1  # Estimate of the Lipschitz constant of the gradient of f
+normWsqrd = 8 # Estimate of the norm squared of the operator W
 PReg = 1e-1  # Parameter for the preconditioner P
 dp = 1.01 # Discrepancy principle parameter
 kMax = 1 # Number of dual iterations
@@ -46,7 +46,8 @@ proxhs=lambda alpha, x: proxhsTV(lam, x)
 mulW=grad2D
 mulWT=div2D
 mulPIn=lambda mu, x: mulPInLeastSquares(mu, x, psfAbsSq)
-f=lambda x: sInner((fftConvolve2D(x, psf) - b).ravel())
+mulP=lambda mu, x: mulPLeastSquares(mu, x, psfAbsSq)
+f=lambda x: sInner(fftConvolve2D(x, psf) - b)
 rho = lambda i: 1 / (i + 1) ** 1.1
 
 ################################################################################
@@ -54,7 +55,7 @@ rho = lambda i: 1 / (i + 1) ** 1.1
 print("NPDIT")
 x1,imRecNPDIT, rreListNPDIT, ssimListNPDIT, timeListNPDIT, gammaListNPDIT, gammaFFBSListNPDIT, dpStopIndexNPDIT\
         = NPDIT(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT,
-            mulPIn=mulPIn, f=f, pStep=pStep, dStep=dStep, PReg=PReg,
+            mulPIn=mulPIn, mulP=mulP, f=f, L=L, normWsqrd=normWsqrd, PReg=PReg, rho=rho,
             dp=dp, maxit=maxIt, tol=tol, xOrig=image, kMax=kMax)
 print("\n\n\n\n")
 
@@ -63,7 +64,7 @@ print("\n\n\n\n")
 print("NPDIT without momentum")
 x1,imRecNPDIT_NM, rreListNPDIT_NM, ssimListNPDIT_NM, timeListNPDIT_NM, gammaListNPDIT_NM, gammaFFBSListNPDIT_NM, dpStopIndexNPDIT_NM\
         = NPDIT(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT,
-            mulPIn=mulPIn, f=f, pStep=pStep, dStep=dStep, PReg=PReg,
+            mulPIn=mulPIn, mulP=mulP, f=f, L=L, normWsqrd=normWsqrd, PReg=PReg, rho=rho,
             dp=dp, maxit=maxIt, tol=tol, xOrig=image, kMax=kMax, momentum=False)
 
 np.savez("./grayscaleNPDIT.npz", imRecNPDIT=imRecNPDIT, rreListNPDIT=rreListNPDIT, ssimListNPDIT=ssimListNPDIT, timeListNPDIT=timeListNPDIT, dpStopIndexNPDIT=dpStopIndexNPDIT, gammaListNPDIT=gammaListNPDIT, gammaFFBSListNPDIT=gammaFFBSListNPDIT,\
