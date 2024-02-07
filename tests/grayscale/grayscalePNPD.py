@@ -46,7 +46,7 @@ proxhs=lambda alpha, x: proxhsTV(lam, x)
 mulW=grad2D
 mulWT=div2D
 mulPIn=lambda mu, x: mulPInLeastSquares(mu, x, psfAbsSq)
-f=lambda x: sInner((fftConvolve2D(x, psf) - b).ravel())
+f=lambda x: sInner(fftConvolve2D(x, psf) - b)
 rho = lambda i: 1 / (i + 1) ** 1.1
 
 ################################################################################

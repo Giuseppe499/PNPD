@@ -45,7 +45,7 @@ gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT, psfFFTC)
 proxhs=lambda alpha, x: proxhsTV(lam, x)
 mulW=grad2D
 mulWT=div2D
-f=lambda x: sInner((fftConvolve2D(x, psf) - b).ravel())
+f=lambda x: sInner(fftConvolve2D(x, psf) - b)
 rho = lambda i: 1 / (i + 1) ** 1.1
 
 ################################################################################
