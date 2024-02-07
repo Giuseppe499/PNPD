@@ -251,7 +251,7 @@ def NPDIT_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
             x1Sum += x2
             y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
             y0 = y1
-        x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulWT(y0)
+        x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulPIn(PReg, mulWT(y0))
         x1Sum += x2
         x2 = x1Sum / kMax
         if f(x2) <= f(xBar) + sInner(gradf(xBar), x2 - xBar) + L / 2 * sInner(x2 - xBar, mulP(PReg, x2 - xBar)):
@@ -260,28 +260,28 @@ def NPDIT_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
     return x1, x2, t, y1, L, gamma, gammaFFBS
 
 def NPDIT_step_no_momentum(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
-            mulWT: Callable, mulPIn: Callable, mulP: Callable, f: Callable,
-            L: float, dStep: float, PReg: float, t0: float, C: float, rho_i: float, kMax: int, eps: float, dInv):
-        # Primal Dual Iteration
-        #k = 0
-        while True:
-            pStep = eps / L
-            x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulWT(y0)
+          mulWT: Callable, mulPIn: Callable, mulP: Callable, f: Callable,
+          L: float, dStep: float, PReg: float, t0: float, C: float, rho_i: float, kMax: int, eps: float, dInv):
+    # Primal Dual Iteration
+    #k = 0
+    while True:
+        pStep = eps / L
+        x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulPIn(PReg, mulWT(y0))
+        y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
+        y0 = y1
+        x1Sum = np.zeros(x1.shape)
+        for k in range(1,kMax):
+            x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulPIn(PReg, mulWT(y0))
+            x1Sum += x2
             y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
             y0 = y1
-            x1Sum = np.zeros(x1.shape)
-            for k in range(1,kMax):
-                x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulWT(y0)
-                x1Sum += x2
-                y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
-                y0 = y1
-            x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulWT(y0)
-            x1Sum += x2
-            x2 = x1Sum / kMax
-            if f(x2) <= f(x1) + sInner(gradf(x1), x2 - x1) + L / 2 * sInner(x2 - x1, mulP(PReg, x2 - x1)):
-                break
-            L *= dInv
-        return x1, x2, None, y1, L, 0, 0
+        x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulPIn(PReg, mulWT(y0))
+        x1Sum += x2
+        x2 = x1Sum / kMax
+        if f(x2) <= f(x1) + sInner(gradf(x1), x2 - x1) + L / 2 * sInner(x2 - x1, mulP(PReg, x2 - x1)):
+            break
+        L *= dInv
+    return x1, x2, None, y1, L, 0, 0
 
 def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
           mulWT: Callable, mulPIn: Callable, mulP: Callable, f: Callable,
@@ -327,7 +327,8 @@ def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
         gammaFFBSList.append(gammaFFBS)
         print("Iteration: " + str(i), end="")
         print(", RRE: " + str(rre), end="")
-        print(", SSIM: " + str(ssimList[-1]))
+        print(", SSIM: " + str(ssimList[-1]), end="")
+        print(", pStep: " + str(eps / L))
         if f(x1) < dp*tol and not dpReached :
             imRec = x1
             dpStopIndex = i+1
