@@ -38,7 +38,7 @@ lam = 1e-2 # TV regularization parameter
 pStep = 1  # Primal step length
 dStep = 1 / 8  # Dual step length
 PReg = 1e-1  # Parameter for the preconditioner P
-dp = 1.01 # Discrepancy principle parameter
+dp = 1.02 # Discrepancy principle parameter
 kMax = 1 # Number of dual iterations
 
 gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT, psfFFTC)

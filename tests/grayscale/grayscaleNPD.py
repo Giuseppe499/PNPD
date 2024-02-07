@@ -36,7 +36,7 @@ tol = noiseNormSqd  # Tolerance
 lam = 1e-3  # TV regularization parameter
 pStep = 1  # Primal step length
 dStep = 1 / 8  # Dual step length
-dp = 1.01 # Discrepancy principle parameter
+dp = 1.02 # Discrepancy principle parameter
 kMax = 1 # Number of dual iterations
 
 

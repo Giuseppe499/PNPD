@@ -38,7 +38,7 @@ lam = 1e-3 # TV regularization parameter
 L = 0.1  # Estimate of the Lipschitz constant of the gradient of f
 normWsqrd = 8 # Estimate of the norm squared of the operator W
 PReg = 1e-1  # Parameter for the preconditioner P
-dp = 1.01 # Discrepancy principle parameter
+dp = 1.02 # Discrepancy principle parameter
 kMax = 1 # Number of dual iterations
 
 gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT, psfFFTC)
