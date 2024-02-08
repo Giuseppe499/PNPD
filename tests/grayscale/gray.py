@@ -1,9 +1,9 @@
-from tests.grayscale import grayscaleGenerateBlurredImage
-from tests.grayscale import grayscaleNPD, grayscaleNPD_kMax,\
-    grayscalePNPD, grayscalePNPD_kMax,\
-    grayscaleNPDIT
-from tests.grayscale import grayscalePlotImages, grayscalePlotAllMethods
-from tests.grayscale import grayscalePlotNPD, grayscalePlotPNPD, grayscalePlotNPDIT
+from tests.grayscale import grayGenerateBlurredImage
+from tests.grayscale import grayNPD, grayNPD_kMax,\
+    grayPNPD, grayPNPD_kMax,\
+    grayNPDIT
+from tests.grayscale import grayPlotImages, grayPlotAllMethods
+from tests.grayscale import grayPlotNPD, grayPlotPNPD, grayPlotNPDIT
 
 from PIL import Image
 import numpy as np
@@ -40,23 +40,23 @@ grayConfig.psf = psf
 grayConfig.psfBT = psfBT
 
 # Generate blurred image
-grayscaleGenerateBlurredImage.main()
+grayGenerateBlurredImage.main()
 
 if Compute:    
     # NPD
-    grayscaleNPD.main()
-    grayscaleNPD_kMax.main()
+    grayNPD.main()
+    grayNPD_kMax.main()
 
     # PNPD
-    grayscalePNPD.main()
-    grayscalePNPD_kMax.main()
+    grayPNPD.main()
+    grayPNPD_kMax.main()
 
     # NPDIT
-    grayscaleNPDIT.main()
+    grayNPDIT.main()
 
 if Plot:
-    grayscalePlotImages.main()
-    grayscalePlotAllMethods.main()
-    grayscalePlotNPD.main()
-    grayscalePlotPNPD.main()
-    grayscalePlotNPDIT.main()
+    grayPlotImages.main()
+    grayPlotAllMethods.main()
+    grayPlotNPD.main()
+    grayPlotPNPD.main()
+    grayPlotNPDIT.main()
