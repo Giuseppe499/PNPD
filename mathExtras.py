@@ -124,6 +124,34 @@ def gaussianPSF(size: int, sigma: float) -> np.array:
 
     return psfMatrix
 
+def outOfFocusPSF(size: int, radius: int) -> np.array:
+    """
+    Generate a PSF matrix for an out-of-focus lens.
+
+    Parameters:
+    - size: Size of the PSF matrix (e.g., size=11 for a 11x11 matrix)
+    - radius: Radius of the out-of-focus lens
+
+    Returns:
+    - psfMatrix: PSF matrix
+    """
+    # Create a grid of coordinates centered at the PSF matrix
+    x = np.linspace(-size // 2, size // 2, size)
+    y = np.linspace(-size // 2, size // 2, size)
+    xx, yy = np.meshgrid(x, y)
+
+    # Calculate the 2D PSF
+    psfMatrix = np.zeros((size, size))
+    for i in range(size):
+        for j in range(size):
+            if xx[i, j] ** 2 + yy[i, j] ** 2 <= radius ** 2:
+                psfMatrix[i, j] = 1
+
+    # Normalize the PSF matrix to sum to 1
+    psfMatrix /= np.sum(psfMatrix)
+
+    return psfMatrix
+
 def centerCrop(image, target_size=(256, 256)):
     h = image.shape[0]
     w = image.shape[1]

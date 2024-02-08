@@ -104,7 +104,7 @@ def main():
     plt.savefig(filename, bbox_inches='tight', dpi=600)
 
     # Plot PSF
-    cropSize = 16
+    cropSize = 20
     plt.figure()
     plt.axis('off')
     plt.imshow(centerCrop(psfBT, (cropSize, cropSize)), cmap='gray')
