@@ -10,7 +10,7 @@ import numpy as np
 from mathExtras import generatePsfMatrix
 import grayConfig
 
-Compute = False
+Compute = True
 Plot = True
 
 i = 1
