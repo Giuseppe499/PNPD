@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from PIL import Image
 import numpy as np
 from numpy.linalg import norm
-from mathExtras import fftConvolve2D, generatePsfMatrix, centerCrop, sInner
+from mathExtras import fftConvolve2D, gaussianPSF, centerCrop, sInner
 
 IMGPATH = "barn.jpg"
 
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     print(image.shape)
 
     # Generate PSF
-    psf = generatePsfMatrix(n, 1.6)
+    psf = gaussianPSF(n, 1.6)
     # Center PSF
     psf = np.roll(psf, (-psf.shape[0] // 2, -psf.shape[0] // 2), axis=(0, 1))
     # Generate noise

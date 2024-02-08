@@ -7,7 +7,7 @@ from tests.grayscale import grayPlotNPD, grayPlotPNPD, grayPlotNPDIT
 
 from PIL import Image
 import numpy as np
-from mathExtras import generatePsfMatrix
+from mathExtras import gaussianPSF
 import grayConfig
 
 Compute = True
@@ -32,7 +32,7 @@ n = image.shape[0]
 print(image.shape)
 
 # Generate PSF
-psf = generatePsfMatrix(n, 1.6)
+psf = gaussianPSF(n, 1.6)
 psfBT = psf.copy()
 # Center PSF
 psf = np.roll(psf, (-psf.shape[0] // 2, -psf.shape[0] // 2), axis=(0, 1))

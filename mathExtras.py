@@ -100,9 +100,9 @@ def fftConvolve2Drgb(in1, in2):
     return np.stack([fftConvolve2D(in1[:,:,i], in2) for i in range(3)], axis=-1)
 
 
-def generatePsfMatrix(size: int, sigma: float) -> np.array:
+def gaussianPSF(size: int, sigma: float) -> np.array:
     """
-    Generate a Point Spread Function (PSF) matrix.
+    Generate a Gaussian Point Spread Function (PSF) matrix.
 
     Parameters:
     - size: Size of the PSF matrix (e.g., size=11 for a 11x11 matrix)

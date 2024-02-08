@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from PIL import Image
 import numpy as np
 from numpy.fft import fft2
-from mathExtras import fftConvolve2D, generatePsfMatrix, sInner
+from mathExtras import fftConvolve2D, gaussianPSF, sInner
 import grayConfig
 import os
 
@@ -65,7 +65,7 @@ def main():
         print(image.shape)
 
         # Generate PSF
-        psf = generatePsfMatrix(n, 1.6)
+        psf = gaussianPSF(n, 1.6)
         psfBT = psf.copy()
         # Center PSF
         psf = np.roll(psf, (-psf.shape[0] // 2, -psf.shape[0] // 2), axis=(0, 1))

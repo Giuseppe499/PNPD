@@ -4,7 +4,7 @@ from torch.fft import fft2, ifft2
 from torchvision.transforms import ToTensor
 import numpy as np
 from torchExtras import (gradLeastSquares, grad2D, div2D, proxhsTV, mulPInLeastSquares)
-from mathExtras import generatePsfMatrix
+from mathExtras import gaussianPSF
 from solvers import torch_PNPD_step
 from skimage.metrics import structural_similarity as ssim
 
@@ -43,7 +43,7 @@ assert torch.all(toGrayscale(pRGB[0, :, :]) == p[0, :, :])
 assert torch.all(toGrayscale(pRGB[1, :, :]) == p[1, :, :])
 
 # Generate PSF
-psf = generatePsfMatrix(4, 1.6)
+psf = gaussianPSF(4, 1.6)
 # Center PSF
 psf = np.roll(psf, (-psf.shape[0] // 2, -psf.shape[0] // 2), axis=(0, 1))
 psf = torch.tensor(psf)

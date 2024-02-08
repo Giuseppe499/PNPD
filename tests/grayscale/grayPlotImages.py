@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from tests.plotExtras import *
-from mathExtras import (centerCrop, generatePsfMatrix, fftConvolve2D)
+from mathExtras import (centerCrop, gaussianPSF, fftConvolve2D)
 import numpy as np
 from matplotlib import pyplot as plt
 from skimage.metrics import structural_similarity as ssim
@@ -142,7 +142,7 @@ def main():
     plt.savefig(savePath(f'{grayConfig.prefix}/BlurredPlusNoise.pdf'), bbox_inches='tight', dpi=1200)
 
     # Plot image * PSF = conv Convolution example
-    psfEXBT = generatePsfMatrix(image.shape[0], 10)
+    psfEXBT = gaussianPSF(image.shape[0], 10)
     psfEX = np.roll(psfEXBT, (-psfEXBT.shape[0] // 2, -psfEXBT.shape[0] // 2), axis=(0, 1))
     convEX = fftConvolve2D(image, psfEX)
     fig, ax = plt.subplots(1, 3)
