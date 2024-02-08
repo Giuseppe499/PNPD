@@ -21,28 +21,21 @@ from PIL import Image
 import numpy as np
 from numpy.fft import fft2
 from mathExtras import fftConvolve2D, generatePsfMatrix, sInner
+import grayConfig
+import os
 
-IMGPATH = "cameraman.tif"
+def main():
+    image = grayConfig.image
+    noisePercent = grayConfig.noisePercent
+    psf = grayConfig.psf
+    psfBT = grayConfig.psfBT
 
-if __name__ == '__main__':
-    image = Image.open(IMGPATH)
-    image = np.asarray(image) / 255
-    image = image[::2, ::2]
-    n = image.shape[0]
-    print(image.shape)
-
-    # Generate PSF
-    psf = generatePsfMatrix(n, 1.6)
-    psfBT = psf.copy()
-    # Center PSF
-    psf = np.roll(psf, (-psf.shape[0] // 2, -psf.shape[0] // 2), axis=(0, 1))
-    
     # Generate blurred image
     conv = fftConvolve2D(image, psf)
-    
+
     # Generate noise
     noise = np.random.normal(size=image.shape)
-    noise *= 0.02 * np.linalg.norm(conv) / np.linalg.norm(noise)
+    noise *= noisePercent * np.linalg.norm(conv) / np.linalg.norm(noise)
     noiseNormSqd = sInner(noise.ravel())
 
     # Add noise to blurred image
@@ -55,4 +48,27 @@ if __name__ == '__main__':
     psfAbsSq = psfFFTC * psfFFT
 
     # Save data
-    np.savez('./grayscaleBlurred.npz', conv=conv, noise=noise, b=b, bFFT=bFFT, psf=psf, psfBT=psfBT, psfFFT=psfFFT, psfFFTC=psfFFTC, psfAbsSq=psfAbsSq, image=image, noiseNormSqd=noiseNormSqd)
+    filename = f'./npz/{grayConfig.prefix}/Blurred.npz'    
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    np.savez(filename, conv=conv, noise=noise, b=b, bFFT=bFFT, psf=psf, psfBT=psfBT, psfFFT=psfFFT, psfFFTC=psfFFTC, psfAbsSq=psfAbsSq, image=image, noiseNormSqd=noiseNormSqd)
+
+
+    if __name__ == "__main__":
+        IMGPATH = "cameraman.tif"
+        grayConfig.noisePercent = 0.02
+
+        image = Image.open(IMGPATH)
+        image = np.asarray(image) / 255
+        image = image[::2, ::2]
+        grayConfig.image = image
+        n = image.shape[0]
+        print(image.shape)
+
+        # Generate PSF
+        psf = generatePsfMatrix(n, 1.6)
+        psfBT = psf.copy()
+        # Center PSF
+        psf = np.roll(psf, (-psf.shape[0] // 2, -psf.shape[0] // 2), axis=(0, 1))
+        grayConfig.psf = psf
+        grayConfig.psfBT = psfBT
+        main()
