@@ -38,7 +38,7 @@ def main():
     tol = noiseNormSqd  # Tolerance
     lamValues = grayConfig.lamValues  # TV regularization parameter
     pStep = 1  # Primal step length
-    dStep = 1 / 8  # Dual step length
+    dStep = .99 / 8  # Dual step length
     dp = 1.01 # Discrepancy principle parameter
     kMaxValues =  grayConfig.kMaxValues # Number of dual iterations
 
