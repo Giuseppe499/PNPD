@@ -152,7 +152,7 @@ def main():
     ax[0].imshow(image, cmap='gray', vmin = 0, vmax = 1)
     ax[0].set_title('$x$')
     ax[0].text(1.05, .5, "$\circledast_{2D}$", fontsize=20, transform = ax[0].transAxes)
-    ax[1].imshow(psfEXBT, cmap='gray')
+    ax[1].imshow(psfEX, cmap='gray')
     ax[1].set_title(f'$u$')
     ax[1].text(1.15, .5, "$=$", fontsize=20, transform = ax[1].transAxes)
     ax[2].imshow(convEX, cmap='gray', vmin = 0, vmax = 1)
