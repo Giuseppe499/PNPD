@@ -44,9 +44,9 @@ for i in range(1,5):
         IMGPATH = "cameraman.tif"
         grayConfig.noisePercent = 0.02 
 
-        grayConfig.lam =  1e-2
+        grayConfig.lam =  1e-3
         grayConfig.lamValues = [1e-2, 1e-3]
-        grayConfig.lamPNPD = 1e-1
+        grayConfig.lamPNPD = 1e-2
         grayConfig.lamValuesPNPD = [1e-1, 1e-2, 1e-3]     
 
         image = Image.open(IMGPATH)
