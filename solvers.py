@@ -242,16 +242,16 @@ def NPDIT_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
     #k = 0
     while True:
         pStep = eps / L
-        x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulPIn(PReg, mulWT(y0))
+        x2 = xBar - pStep * mulPIn(PReg, gradf(xBar) + mulWT(y0))
         y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
         y0 = y1
         x1Sum = np.zeros(x1.shape)
         for k in range(1,kMax):
-            x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulPIn(PReg, mulWT(y0))
+            x2 = xBar - pStep * mulPIn(PReg, gradf(xBar) + mulWT(y0))
             x1Sum += x2
             y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
             y0 = y1
-        x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulPIn(PReg, mulWT(y0))
+        x2 = xBar - pStep * mulPIn(PReg, gradf(xBar) + mulWT(y0))
         x1Sum += x2
         x2 = x1Sum / kMax
         if f(x2) <= f(xBar) + sInner(gradf(xBar), x2 - xBar) + L / 2 * sInner(x2 - xBar, mulP(PReg, x2 - xBar)):
@@ -266,16 +266,16 @@ def NPDIT_step_no_momentum(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: 
     #k = 0
     while True:
         pStep = eps / L
-        x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulPIn(PReg, mulWT(y0))
+        x2 = x1 - pStep * mulPIn(PReg, gradf(x1) + mulWT(y0))
         y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
         y0 = y1
         x1Sum = np.zeros(x1.shape)
         for k in range(1,kMax):
-            x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulPIn(PReg, mulWT(y0))
+            x2 = x1 - pStep * mulPIn(PReg, gradf(x1) + mulWT(y0))
             x1Sum += x2
             y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
             y0 = y1
-        x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulPIn(PReg, mulWT(y0))
+        x2 = x1 - pStep * mulPIn(PReg, gradf(x1) + mulWT(y0))
         x1Sum += x2
         x2 = x1Sum / kMax
         if f(x2) <= f(x1) + sInner(gradf(x1), x2 - x1) + L / 2 * sInner(x2 - x1, mulP(PReg, x2 - x1)):
