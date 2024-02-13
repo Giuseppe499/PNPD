@@ -123,7 +123,7 @@ def main():
     ax[1].set_title(f'PSF\n(center crop of size {cropSize}x{cropSize})')
     ax[1].text(1.15, .5, "$=$", fontsize=20, transform = ax[1].transAxes)
     ax[2].imshow(conv, cmap='gray', vmin = 0, vmax = 1)
-    ax[2].set_title('$b = x \circledast_{2D}$ PSF')
+    ax[2].set_title('$\\tilde b = x \circledast_{2D}$ PSF')
     plt.savefig(savePath(f'{grayConfig.prefix}/PSFConv.pdf'), bbox_inches='tight', dpi=1200)
 
     # Plot conv + noise = blurred image
@@ -138,7 +138,7 @@ def main():
     ax[1].set_title('$n$')
     ax[1].text(1.15, .5, "$=$", fontsize=20, transform = ax[1].transAxes)
     ax[2].imshow(b, cmap='gray', vmin = 0, vmax = 1)
-    ax[2].set_title('$\\tilde b = b + n$')
+    ax[2].set_title('$b = \\tilde b + n$')
     plt.savefig(savePath(f'{grayConfig.prefix}/BlurredPlusNoise.pdf'), bbox_inches='tight', dpi=1200)
 
     # Plot image * PSF = conv Convolution example
