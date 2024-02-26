@@ -4,9 +4,10 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
+matplotlib.rcParams["font.size"] = 12
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 props = dict(boxstyle='square', fc="white", ec="black" , alpha=0.5)
-boxPos = (0.72, 0.895)
+boxPos = (0.95, 0.98)
 
 def savePath(filename, directory="./Plots/"):
         os.makedirs(directory, exist_ok=True)
@@ -48,5 +49,7 @@ def plotLists(Y, X = None, stopIndices = None, labels = None, labelsStop = None,
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.title(title)
+        
+        os.makedirs(os.path.dirname(savePath(saveName)), exist_ok=True)
         if saveName is not None:
             plt.savefig(savePath(saveName), bbox_inches='tight')

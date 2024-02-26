@@ -33,13 +33,13 @@ def main():
         image = data['image']
         noiseNormSqd = data['noiseNormSqd']
 
-    maxIt = 150  # Maximum number of iterations
+    maxIt = grayConfig.maxIt  # Maximum number of iterations
     tol = noiseNormSqd  # Tolerance
     lam = grayConfig.lam  # TV regularization parameter
     pStep = 1  # Primal step length
     dStep = .99 / 8  # Dual step length
     dp = 1.02 # Discrepancy principle parameter
-    kMax = 1 # Number of dual iterations
+    kMax = grayConfig.kMax # Number of dual iterations
 
 
 
@@ -53,19 +53,11 @@ def main():
     ################################################################################
     # NPD
     print("NPD")
-    x1,imRecNPD, rreListNPD, ssimListNPD, timeListNPD, gammaListNPD, gammaFFBSListNPD, dpStopIndexNPD = \
-    NPD(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT, f=f, pStep=pStep, dStep=dStep, kMax=kMax, rho=rho, maxit=maxIt, tol=tol, dp=dp, xOrig=image)
+    x1,imRec, rreList, ssimList, timeList, gammaList, gammaFFBSList, dpStopIndex, recList = \
+    NPD(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT, f=f, pStep=pStep, dStep=dStep, kMax=kMax, rho=rho, maxit=maxIt, tol=tol, dp=dp, xOrig=image, momentum=grayConfig.momentum, recIndexes=grayConfig.recIndexes)
     print("\n\n\n\n")
 
-    ################################################################################
-    # NPD without momentum
-    print("NPD without momentum")
-    x1,imRecNPD_NM, rreListNPD_NM, ssimListNPD_NM, timeListNPD_NM, gammaListNPD_NM, gammaFFBSListNPD_NM, dpStopIndexNPD_NM = \
-    NPD(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT, f=f, pStep=pStep, dStep=dStep, kMax=kMax, rho=rho, maxit=maxIt, tol=tol, dp=dp, xOrig=image, momentum=False)
-    print("\n\n\n\n")
-
-    np.savez(f"./npz/{grayConfig.prefix}/NPD.npz", imRecNPD=imRecNPD, rreListNPD=rreListNPD, ssimListNPD=ssimListNPD, timeListNPD=timeListNPD, dpStopIndexNPD=dpStopIndexNPD, gammaListNPD=gammaListNPD, gammaFFBSListNPD=gammaFFBSListNPD,\
-                imRecNPD_NM=imRecNPD_NM, rreListNPD_NM=rreListNPD_NM, ssimListNPD_NM=ssimListNPD_NM, timeListNPD_NM=timeListNPD_NM, dpStopIndexNPD_NM=dpStopIndexNPD_NM, gammaListNPD_NM=gammaListNPD_NM, gammaFFBSListNPD_NM=gammaFFBSListNPD_NM)
+    np.savez(f"./npz/{grayConfig.prefix}/NPD_{grayConfig.suffix}.npz", imRec=imRec, rreList=rreList, ssimList=ssimList, timeList=timeList, dpStopIndex=dpStopIndex, gammaList=gammaList, gammaFFBSList=gammaFFBSList, recList=recList)
 
 if __name__ == "__main__":
     main()

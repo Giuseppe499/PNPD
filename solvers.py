@@ -89,7 +89,7 @@ def NPD_step_no_momentum(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Ca
 def NPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable, mulWT: Callable,
         f: Callable, pStep: float, dStep: float, xOrig,
         kMax: int = 1, t0: float = 1, rho: Callable = lambda i: 1/(i+1)**1.1,
-        tol: float = 1e-4, dp: float = 1, maxit: int = 100, momentum: bool = True):
+        tol: float = 1e-4, dp: float = 1, maxit: int = 100, momentum: bool = True, recIndexes = []):
     """
     Nested Primal Dual (FISTA-like algorithm)
     Approximate argmin_{x \in R^d} f(x) + h(Wx) where f is differentiable and
@@ -103,6 +103,8 @@ def NPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable, mulWT: Callable,
     ssimList = []
     gammaList = []
     gammaFFBSList = []
+
+    recList = []
 
     x1 = x0
     y0 = np.zeros(proxhs(1, mulW(x0)).shape)
@@ -131,11 +133,13 @@ def NPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable, mulWT: Callable,
             imRec = x1
             dpStopIndex = i+1
             dpReached = True
+        if (i+1) in recIndexes:
+            recList.append(x1)
     
     if imRec is None:
         imRec = x1
         dpStopIndex = i+1
-    return x1, imRec, rreList, ssimList, timeList, gammaList, gammaFFBSList, dpStopIndex
+    return x1, imRec, rreList, ssimList, timeList, gammaList, gammaFFBSList, dpStopIndex, recList
 
 def PNPD_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
                mulWT: Callable, mulPIn: Callable, pStep: float, dStep: float,
@@ -185,7 +189,7 @@ def PNPD_step_no_momentum(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: C
 def PNPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
           mulWT: Callable, mulPIn: Callable, f: Callable,
           pStep: float, dStep: float, PReg: float, xOrig, kMax: int = 1,
-          t0: float = 1, rho: Callable = lambda i: 1/(i+1)**1.1, tol: float = 1e-4, dp: float = 1, maxit: int = 100, momentum: bool = True):
+          t0: float = 1, rho: Callable = lambda i: 1/(i+1)**1.1, tol: float = 1e-4, dp: float = 1, maxit: int = 100, momentum: bool = True, recIndexes = []):
     """
     Nested Primal Dual (FISTA-like algorithm)
     Approximate argmin_{x \in R^d} f(x) + h(Wx) where f is differentiable and
@@ -199,6 +203,8 @@ def PNPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
     ssimList = []
     gammaList = []
     gammaFFBSList = []
+
+    recList = []
 
     x1 = x0
     y0 = np.zeros(proxhs(1, mulW(x0)).shape)
@@ -228,10 +234,12 @@ def PNPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
             imRec = x1
             dpStopIndex = i+1
             dpReached = True
+        if (i+1) in recIndexes:
+            recList.append(x1)
     if imRec is None:
         imRec = x1
         dpStopIndex = i+1
-    return x1, imRec, rreList, ssimList, timeList, gammaList, gammaFFBSList, dpStopIndex
+    return x1, imRec, rreList, ssimList, timeList, gammaList, gammaFFBSList, dpStopIndex, recList
 
 def NPDIT_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
           mulWT: Callable, mulPIn: Callable, mulP: Callable, f: Callable,
@@ -290,7 +298,7 @@ def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
           L: float, normWsqrd: float, PReg: float, xOrig, kMax: int = 1,
           t0: float = 1, eps: float = 0.99, dInv = 2,
           rho: Callable = lambda i: 1/(i+1)**1.1, tol: float = 1e-4,
-          dp: float = 1, maxit: int = 100, momentum: bool = True):
+          dp: float = 1, maxit: int = 100, momentum: bool = True, recIndexes = []):
     """
     Nested Primal Dual (FISTA-like algorithm)
     Approximate argmin_{x \in R^d} f(x) + h(Wx) where f is differentiable and
@@ -304,6 +312,8 @@ def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
     ssimList = []
     gammaList = []
     gammaFFBSList = []
+
+    recList = []
 
     x1 = x0
     y0 = np.zeros(proxhs(1, mulW(x0)).shape)
@@ -335,10 +345,13 @@ def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
             imRec = x1
             dpStopIndex = i+1
             dpReached = True
+        if (i+1) in recIndexes:
+            recList.append(x1)
+            
     if imRec is None:
         imRec = x1
         dpStopIndex = i+1
-    return x1, imRec, rreList, ssimList, timeList, gammaList, gammaFFBSList, dpStopIndex
+    return x1, imRec, rreList, ssimList, timeList, gammaList, gammaFFBSList, dpStopIndex, recList
 
 import torch
 def torch_PNPD_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,

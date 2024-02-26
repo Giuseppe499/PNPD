@@ -34,14 +34,14 @@ def main():
         image = data['image']
         noiseNormSqd = data['noiseNormSqd']
 
-    maxIt = 150 # Maximum number of iterations
+    maxIt = grayConfig.maxIt # Maximum number of iterations
     tol = noiseNormSqd # Tolerance
-    lam = grayConfig.lamPNPD # TV regularization parameter
+    lam = grayConfig.lam # TV regularization parameter
     pStep = 1  # Primal step length
     dStep = .99 / 8  # Dual step length
     PReg = grayConfig.nu  # Parameter for the preconditioner P
     dp = 1.02 # Discrepancy principle parameter
-    kMax = 1 # Number of dual iterations
+    kMax = grayConfig.kMax # Number of dual iterations
 
     gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT, psfFFTC)
     proxhs=lambda alpha, x: proxhsTV(lam, x)
@@ -54,19 +54,10 @@ def main():
     ################################################################################
     # PNPD  
     print("PNPD")
-    x1,imRecPNPD, rreListPNPD, ssimListPNPD, timeListPNPD, gammaListPNPD, gammaFFBSListPNPD, dpStopIndexPNPD\
+    x1,imRec, rreList, ssimList, timeList, gammaList, gammaFFBSList, dpStopIndex, recList\
             = PNPD(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT,
                 mulPIn=mulPIn, f=f, pStep=pStep, dStep=dStep, PReg=PReg,
-                dp=dp, maxit=maxIt, tol=tol, xOrig=image, kMax=kMax)
+                dp=dp, maxit=maxIt, tol=tol, xOrig=image, kMax=kMax, momentum=grayConfig.momentum, recIndexes=grayConfig.recIndexes)
     print("\n\n\n\n")
 
-    ################################################################################
-    # PNPD without momentum
-    print("PNPD without momentum")
-    x1,imRecPNPD_NM, rreListPNPD_NM, ssimListPNPD_NM, timeListPNPD_NM, gammaListPNPD_NM, gammaFFBSListPNPD_NM, dpStopIndexPNPD_NM\
-            = PNPD(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT,
-                mulPIn=mulPIn, f=f, pStep=pStep, dStep=dStep, PReg=PReg,
-                dp=dp, maxit=maxIt, tol=tol, xOrig=image, kMax=kMax, momentum=False)
-
-    np.savez(f"./npz/{grayConfig.prefix}/PNPD.npz", imRecPNPD=imRecPNPD, rreListPNPD=rreListPNPD, ssimListPNPD=ssimListPNPD, timeListPNPD=timeListPNPD, dpStopIndexPNPD=dpStopIndexPNPD, gammaListPNPD=gammaListPNPD, gammaFFBSListPNPD=gammaFFBSListPNPD,\
-                imRecPNPD_NM=imRecPNPD_NM, rreListPNPD_NM=rreListPNPD_NM, ssimListPNPD_NM=ssimListPNPD_NM, timeListPNPD_NM=timeListPNPD_NM, dpStopIndexPNPD_NM=dpStopIndexPNPD_NM, gammaListPNPD_NM=gammaListPNPD_NM, gammaFFBSListPNPD_NM=gammaFFBSListPNPD_NM)
+    np.savez(f"./npz/{grayConfig.prefix}/PNPD_{grayConfig.suffix}.npz", imRec=imRec, rreList=rreList, ssimList=ssimList, timeList=timeList, dpStopIndex=dpStopIndex, recList=recList, gammaList=gammaList, gammaFFBSList=gammaFFBSList)

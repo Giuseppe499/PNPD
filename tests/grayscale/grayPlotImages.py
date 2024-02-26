@@ -20,76 +20,36 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from tests.plotExtras import *
 from mathExtras import (centerCrop, gaussianPSF, fftConvolve2D)
 import numpy as np
+import matplotlib
 from matplotlib import pyplot as plt
 from skimage.metrics import structural_similarity as ssim
 import grayConfig
 
-def main():
+def main(suffixNPD, suffixPNPD, suffixNPDIT, recIndexes):
     with np.load(f'./npz/{grayConfig.prefix}/Blurred.npz') as data:
         b = data['b']
-        psf = data['psf']
         psfBT = data['psfBT']
         image = data['image']
         conv = data['conv']
         noise = data['noise']
-        bSSIM = ssim(b, image, data_range=1)
-        bRRE = np.linalg.norm(b - image) / np.linalg.norm(image)
 
-    with np.load(f'./npz/{grayConfig.prefix}/NPD.npz') as data:
-        imRecNPD = data['imRecNPD']
-        rreListNPD = addIt0(data['rreListNPD'], bRRE)
-        ssimListNPD = addIt0(data['ssimListNPD'], bSSIM)
-        timeListNPD = relTimetoAbsTime(data['timeListNPD'])
-        dpStopIndexNPD = data['dpStopIndexNPD']
-        rreRecNPD = rreListNPD[dpStopIndexNPD]
-        ssimRecNPD = ssimListNPD[dpStopIndexNPD]
+    with np.load(f'./npz/{grayConfig.prefix}/NPD_{suffixNPD}.npz') as data:
+        imRecNPD = data['imRec']
+        dpStopIndexNPD = data['dpStopIndex']
+        recListNPD = data['recList']
 
-        imRecNPD_NM = data['imRecNPD_NM']
-        rreListNPD_NM = addIt0(data['rreListNPD_NM'], bRRE)
-        ssimListNPD_NM = addIt0(data['ssimListNPD_NM'], bSSIM)
-        timeListNPD_NM = relTimetoAbsTime(data['timeListNPD_NM'])
-        dpStopIndexNPD_NM = data['dpStopIndexNPD_NM']
+        gammaListNPD = data['gammaList']
+        gammaFFBSListNPD = data['gammaFFBSList']
 
-        gammaListNPD = data['gammaListNPD']
-        gammaFFBSListNPD = data['gammaFFBSListNPD']
+    with np.load(f'./npz/{grayConfig.prefix}/PNPD_{suffixPNPD}.npz') as data:
+        imRecPNPD = data['imRec']
+        dpStopIndexPNPD = data['dpStopIndex']
+        recListPNPD = data['recList']
 
-    with np.load(f'./npz/{grayConfig.prefix}/PNPD.npz') as data:
-        imRecPNPD = data['imRecPNPD']
-        rreListPNPD = addIt0(data['rreListPNPD'], bRRE)
-        ssimListPNPD = addIt0(data['ssimListPNPD'], bSSIM)
-        ssimPNPD = ssim(imRecPNPD, image, data_range=1)
-        timeListPNPD = relTimetoAbsTime(data['timeListPNPD'])
-        dpStopIndexPNPD = data['dpStopIndexPNPD']
-        rreRecPNPD = rreListPNPD[dpStopIndexPNPD]
-        ssimRecPNPD = ssimListPNPD[dpStopIndexPNPD]
-
-        imRecPNPD_NM = data['imRecPNPD_NM']
-        rreListPNPD_NM = addIt0(data['rreListPNPD_NM'], bRRE)
-        ssimListPNPD_NM = addIt0(data['ssimListPNPD_NM'], bSSIM)
-        timeListPNPD_NM = relTimetoAbsTime(data['timeListPNPD_NM'])
-        dpStopIndexPNPD_NM = data['dpStopIndexPNPD_NM']
-
-        gammaListPNPD = data['gammaListPNPD']
-        gammaFFBSListPNPD = data['gammaFFBSListPNPD']
-
-    with np.load(f'./npz/{grayConfig.prefix}/NPDIT.npz') as data:
-        imRecNPDIT = data['imRecNPDIT']
-        rreListNPDIT = addIt0(data['rreListNPDIT'], bRRE)
-        ssimListNPDIT = addIt0(data['ssimListNPDIT'], bSSIM)
-        ssimNPDIT = ssim(imRecNPDIT, image, data_range=1)
-        timeListNPDIT = relTimetoAbsTime(data['timeListNPDIT'])
-        dpStopIndexNPDIT = data['dpStopIndexNPDIT']
-        rreRecNPDIT = rreListNPDIT[dpStopIndexNPDIT]
-        ssimRecNPDIT = ssimListNPDIT[dpStopIndexNPDIT]
-
-        imRecNPDIT_NM = data['imRecNPDIT_NM']
-        rreListNPDIT_NM = addIt0(data['rreListNPDIT_NM'], bRRE)
-        ssimListNPDIT_NM = addIt0(data['ssimListNPDIT_NM'], bSSIM)
-        timeListNPDIT_NM = relTimetoAbsTime(data['timeListNPDIT_NM'])
-        dpStopIndexNPDIT_NM = data['dpStopIndexNPDIT_NM']
-
-        gammaListNPDIT = data['gammaListNPDIT']
-        gammaFFBSListNPDIT = data['gammaFFBSListNPDIT']
+    with np.load(f'./npz/{grayConfig.prefix}/NPDIT_{suffixNPDIT}.npz') as data:
+        imRecNPDIT = data['imRec']
+        dpStopIndexNPDIT = data['dpStopIndex']
+        recListNPDIT = data['recList']
     
 
     show = False
@@ -110,6 +70,8 @@ def main():
     plt.imshow(centerCrop(psfBT, (cropSize, cropSize)), cmap='gray')
     plt.title(f'PSF (cropped to {cropSize}x{cropSize})')
     plt.savefig(savePath(f'{grayConfig.prefix}/PSF.pdf'), bbox_inches='tight', dpi=300)
+
+    matplotlib.rcParams["font.size"] = 10
 
     # Plot image * PSF = conv
     fig, ax = plt.subplots(1, 3)
@@ -159,8 +121,9 @@ def main():
     ax[2].set_title('$x \circledast_{2D}$ u')
     plt.savefig(savePath(f'{grayConfig.prefix}/PSFConvExample.pdf'), bbox_inches='tight', dpi=1200)
 
+    matplotlib.rcParams["font.size"] = 12
+
     def plotReconstruction(imRec, title, iteration = None):
-        plt.figure()
         plt.axis('off')
         plt.imshow(imRec, cmap='gray', vmin = 0, vmax = 1)
         plt.title(title)
@@ -173,34 +136,48 @@ def main():
             vOffset = -0.05
         else:
             text = f"RRE: {rre:.4f}\nSSIM: {SSIM:.4f}"
-        ax.text(boxPos[0], boxPos[1]+vOffset, text, bbox=props, transform = ax.transAxes, fontsize=12)
-        
+        ax.text(boxPos[0], boxPos[1]+vOffset, text, bbox=props, transform = ax.transAxes, fontsize=12, horizontalalignment='right', verticalalignment='top')
+
+    def plotRecList(recList, recIndexes, recDP, itDP, method):
+        n = len(recList) + 1
+        plt.figure(figsize=(5*n, 5))
+        plt.subplot(1, n, 1)
+        plotReconstruction(recDP, f'{method} discrepancy principle', iteration = itDP)
+        for i, rec in enumerate(recList):
+            plt.subplot(1, n, i+2)
+            plotReconstruction(rec, f'{method} iteration {recIndexes[i]}', iteration = recIndexes[i])
+
+    
     # Plot blurred image
+    plt.figure()
     plotReconstruction(b, 'Blurred Image')
-    plt.savefig(savePath(f'{grayConfig.prefix}/BlurredImage.pdf'), bbox_inches='tight', dpi=600)
+    plt.savefig(savePath(f'{grayConfig.prefix}/BlurredImage.pdf'), bbox_inches='tight', dpi=300)
 
     # Plot NPD reconstruction
-    plotReconstruction(imRecNPD, 'NPD Reconstruction', iteration =  dpStopIndexNPD)
-    plt.savefig(savePath(f'{grayConfig.prefix}/NPD_Reconstruction.pdf'), bbox_inches='tight', dpi=600)
-
-    # Plot NPD without momentum reconstruction
-    plotReconstruction(imRecNPD_NM, 'NPD without momentum Reconstruction', iteration =  dpStopIndexNPD_NM)
-    plt.savefig(savePath(f'{grayConfig.prefix}/NPD_NM_Reconstruction.pdf'), bbox_inches='tight', dpi=600)
+    plotRecList(recListNPD, recIndexes, imRecNPD, dpStopIndexNPD, 'NPD')
+    n = len(recIndexes) + 1
+    plt.savefig(savePath(f'{grayConfig.prefix}/NPD_Reconstruction.pdf'), bbox_inches='tight', dpi=300*n)
 
     # Plot PNPD reconstruction
-    plotReconstruction(imRecPNPD, 'PNPD Reconstruction', iteration =  dpStopIndexPNPD)
-    plt.savefig(savePath(f'{grayConfig.prefix}/PNPD_Reconstruction.pdf'), bbox_inches='tight', dpi=600)
-
-    # Plot PNPD without momentum reconstruction
-    plotReconstruction(imRecPNPD_NM, 'PNPD without momentum Reconstruction', iteration =  dpStopIndexPNPD_NM)
-    plt.savefig(savePath(f'{grayConfig.prefix}/PNPD_NM_Reconstruction.pdf'), bbox_inches='tight', dpi=600)
+    plotRecList(recListPNPD, recIndexes, imRecPNPD, dpStopIndexPNPD, 'PNPD')
+    plt.savefig(savePath(f'{grayConfig.prefix}/PNPD_Reconstruction.pdf'), bbox_inches='tight', dpi=300*n)
 
     # Plot NPDIT reconstruction
-    plotReconstruction(imRecNPDIT, 'NPDIT Reconstruction', iteration =  dpStopIndexNPDIT)
-    plt.savefig(savePath(f'{grayConfig.prefix}/NPDIT_Reconstruction.pdf'), bbox_inches='tight', dpi=600)
+    plotRecList(recListNPDIT, recIndexes, imRecNPDIT, dpStopIndexNPDIT, 'NPDIT')
+    plt.savefig(savePath(f'{grayConfig.prefix}/NPDIT_Reconstruction.pdf'), bbox_inches='tight', dpi=300*n)
+
+    # Plot gamma vs Iteration: gammaFFBS vs gammaNPD
+    plotLists([gammaListNPD, gammaFFBSListNPD],
+                labels=["$\gamma^{NPD}$", "$\gamma^{FFBS}$"],
+                title='$\gamma^{FFBS}$ vs $\gamma^{NPD}$',
+                xlabel='Iteration', ylabel='$\gamma$',
+                linestyle=['-', '-.'],
+                saveName=f'{grayConfig.prefix}/Gamma_IT.pdf')
 
     if show:
         plt.show()
+    else:
+        plt.close('all')
 
 if __name__ == "__main__":
     main() 

@@ -34,14 +34,14 @@ def main():
         image = data['image']
         noiseNormSqd = data['noiseNormSqd']
 
-    maxIt = 150 # Maximum number of iterations
+    maxIt = grayConfig.maxIt # Maximum number of iterations
     tol = noiseNormSqd # Tolerance
     lam = grayConfig.lam # TV regularization parameter
     L = 0.1  # Estimate of the Lipschitz constant of the gradient of f
     normWsqrd = 8 # Estimate of the norm squared of the operator W
     PReg = grayConfig.nu  # Parameter for the preconditioner P
     dp = 1.02 # Discrepancy principle parameter
-    kMax = 1 # Number of dual iterations
+    kMax = grayConfig.kMax # Number of dual iterations
 
     gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT, psfFFTC)
     proxhs=lambda alpha, x: proxhsTV(lam, x)
@@ -55,22 +55,13 @@ def main():
     ################################################################################
     # NPDIT  
     print("NPDIT")
-    x1,imRecNPDIT, rreListNPDIT, ssimListNPDIT, timeListNPDIT, gammaListNPDIT, gammaFFBSListNPDIT, dpStopIndexNPDIT\
+    x1,imRec, rreList, ssimList, timeList, gammaList, gammaFFBSList, dpStopIndex, recList\
             = NPDIT(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT,
                 mulPIn=mulPIn, mulP=mulP, f=f, L=L, normWsqrd=normWsqrd, PReg=PReg, rho=rho,
-                dp=dp, maxit=maxIt, tol=tol, xOrig=image, kMax=kMax)
+                dp=dp, maxit=maxIt, tol=tol, xOrig=image, kMax=kMax, momentum=grayConfig.momentum, recIndexes=grayConfig.recIndexes)
     print("\n\n\n\n")
 
-    ################################################################################
-    # NPDIT without momentum
-    print("NPDIT without momentum")
-    x1,imRecNPDIT_NM, rreListNPDIT_NM, ssimListNPDIT_NM, timeListNPDIT_NM, gammaListNPDIT_NM, gammaFFBSListNPDIT_NM, dpStopIndexNPDIT_NM\
-            = NPDIT(x0=b, gradf=gradf, proxhs=proxhs, mulW=mulW, mulWT=mulWT,
-                mulPIn=mulPIn, mulP=mulP, f=f, L=L, normWsqrd=normWsqrd, PReg=PReg, rho=rho,
-                dp=dp, maxit=maxIt, tol=tol, xOrig=image, kMax=kMax, momentum=False)
-
-    np.savez(f"./npz/{grayConfig.prefix}/NPDIT.npz", imRecNPDIT=imRecNPDIT, rreListNPDIT=rreListNPDIT, ssimListNPDIT=ssimListNPDIT, timeListNPDIT=timeListNPDIT, dpStopIndexNPDIT=dpStopIndexNPDIT, gammaListNPDIT=gammaListNPDIT, gammaFFBSListNPDIT=gammaFFBSListNPDIT,\
-                imRecNPDIT_NM=imRecNPDIT_NM, rreListNPDIT_NM=rreListNPDIT_NM, ssimListNPDIT_NM=ssimListNPDIT_NM, timeListNPDIT_NM=timeListNPDIT_NM, dpStopIndexNPDIT_NM=dpStopIndexNPDIT_NM, gammaListNPDIT_NM=gammaListNPDIT_NM, gammaFFBSListNPDIT_NM=gammaFFBSListNPDIT_NM)
+    np.savez(f"./npz/{grayConfig.prefix}/NPDIT_{grayConfig.suffix}.npz", imRec=imRec, rreList=rreList, ssimList=ssimList, timeList=timeList, dpStopIndex=dpStopIndex, gammaList=gammaList, gammaFFBSList=gammaFFBSList, recList=recList)
 
 if __name__ == "__main__":
     main()
