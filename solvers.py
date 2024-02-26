@@ -146,16 +146,17 @@ def PNPD_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
     xBar = x1 + gamma * (x1 - x0)
     # Primal Dual Iteration
     #k = 0
-    x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulWT(y0)
+    mulPinxBar = mulPIn(PReg, gradf(xBar))
+    x2 = xBar - pStep * (mulPinxBar + mulWT(y0))
     y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
     y0 = y1
     x1Sum = np.zeros(x1.shape)
     for k in range(1,kMax):
-        x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulWT(y0)
+        x2 = xBar - pStep * (mulPinxBar + mulWT(y0))
         x1Sum += x2
         y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
         y0 = y1
-    x2 = xBar - pStep * mulPIn(PReg, gradf(xBar)) - pStep * mulWT(y0)
+    x2 = xBar - pStep * (mulPinxBar + mulWT(y0))
     x1Sum += x2
     x2 = x1Sum / kMax
     return x1, x2, t, y1, gamma, gammaFFBS
@@ -165,16 +166,17 @@ def PNPD_step_no_momentum(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: C
                PReg: float, t0: float, C: float, rho_i: float, kMax: int = 1):
     # Primal Dual Iteration
     #k = 0
-    x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulWT(y0)
+    mulPinx1 = mulPIn(PReg, gradf(x1))
+    x2 = x1 - pStep * (mulPinx1 + mulWT(y0))
     y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
     y0 = y1
     x1Sum = np.zeros(x1.shape)
     for k in range(1,kMax):
-        x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulWT(y0)
+        x2 = x1 - pStep * (mulPinx1 + mulWT(y0))
         x1Sum += x2
         y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
         y0 = y1
-    x2 = x1 - pStep * mulPIn(PReg, gradf(x1)) - pStep * mulWT(y0)
+    x2 = x1 - pStep * (mulPinx1 + mulWT(y0))
     x1Sum += x2
     x2 = x1Sum / kMax
     return x1, x2, None, y1, None, None
