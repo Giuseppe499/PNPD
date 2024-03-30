@@ -53,16 +53,17 @@ def NPD_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
     xBar = x1 + gamma * (x1 - x0)
     # Primal Dual Iteration
     #k = 0
-    x2 = xBar - pStep * gradf(xBar) - pStep * mulWT(y0)
+    gradf_xBar = gradf(xBar)
+    x2 = xBar - pStep * (gradf_xBar + mulWT(y0))
     y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
     y0 = y1
     x1Sum = np.zeros(x1.shape)
     for k in range(1,kMax):
-        x2 = xBar - pStep * gradf(xBar) - pStep * mulWT(y0)
+        x2 = xBar - pStep * (gradf_xBar + mulWT(y0))
         x1Sum += x2
         y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
         y0 = y1
-    x2 = xBar - pStep * gradf(xBar) - pStep * mulWT(y0)
+    x2 = xBar - pStep * (gradf_xBar + mulWT(y0))
     x1Sum += x2
     x2 = x1Sum / kMax
     return x1, x2, t, y1, gamma, gammaFFBS
@@ -72,16 +73,17 @@ def NPD_step_no_momentum(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Ca
              rho_i: float, kMax: int = 1):
     # Primal Dual Iteration
     #k = 0
-    x2 = x1 - pStep * gradf(x1) - pStep * mulWT(y0)
+    gradf_x1 = gradf(x1)
+    x2 = x1 - pStep * (gradf_x1 + mulWT(y0))
     y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
     y0 = y1
     x1Sum = np.zeros(x1.shape)
     for k in range(1,kMax):
-        x2 = x1 - pStep * gradf(x1) - pStep * mulWT(y0)
+        x2 = x1 - pStep * (gradf_x1 + mulWT(y0))
         x1Sum += x2
         y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
         y0 = y1
-    x2 = x1 - pStep * gradf(x1) - pStep * mulWT(y0)
+    x2 = x1 - pStep * (gradf_x1 + mulWT(y0))
     x1Sum += x2
     x2 = x1Sum / kMax
     return x1, x2, 0, y1, 0, 0
@@ -248,23 +250,25 @@ def NPDIT_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
     gammaFFBS = (t0 - 1) / t
     gamma = min(gammaFFBS, C*rho_i / (norm(x1 - x0)))
     xBar = x1 + gamma * (x1 - x0)
+    gradf_xBar = gradf(xBar)
     # Primal Dual Iteration
     #k = 0
     while True:
         pStep = eps / L
-        x2 = xBar - pStep * mulPIn(PReg, gradf(xBar) + mulWT(y0))
+        x2 = xBar - pStep * mulPIn(PReg, gradf_xBar + mulWT(y0))
         y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
         y0 = y1
         x1Sum = np.zeros(x1.shape)
         for k in range(1,kMax):
-            x2 = xBar - pStep * mulPIn(PReg, gradf(xBar) + mulWT(y0))
+            x2 = xBar - pStep * mulPIn(PReg, gradf_xBar + mulWT(y0))
             x1Sum += x2
             y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
             y0 = y1
-        x2 = xBar - pStep * mulPIn(PReg, gradf(xBar) + mulWT(y0))
+        x2 = xBar - pStep * mulPIn(PReg, gradf_xBar + mulWT(y0))
         x1Sum += x2
         x2 = x1Sum / kMax
-        if f(x2) <= f(xBar) + sInner(gradf(xBar), x2 - xBar) + L / 2 * sInner(x2 - xBar, mulP(PReg, x2 - xBar)):
+        x2MinusXBar = x2 - xBar
+        if f(x2) <= f(xBar) + sInner(gradf_xBar, x2MinusXBar) + L / 2 * sInner(x2MinusXBar, mulP(PReg, x2MinusXBar)):
             break
         L *= dInv
     return x1, x2, t, y1, L, gamma, gammaFFBS
@@ -274,21 +278,23 @@ def NPDIT_step_no_momentum(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: 
           L: float, dStep: float, PReg: float, t0: float, C: float, rho_i: float, kMax: int, eps: float, dInv):
     # Primal Dual Iteration
     #k = 0
+    gradf_x1 = gradf(x1)
     while True:
         pStep = eps / L
-        x2 = x1 - pStep * mulPIn(PReg, gradf(x1) + mulWT(y0))
+        x2 = x1 - pStep * mulPIn(PReg, gradf_x1 + mulWT(y0))
         y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
         y0 = y1
         x1Sum = np.zeros(x1.shape)
         for k in range(1,kMax):
-            x2 = x1 - pStep * mulPIn(PReg, gradf(x1) + mulWT(y0))
+            x2 = x1 - pStep * mulPIn(PReg, gradf_x1 + mulWT(y0))
             x1Sum += x2
             y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
             y0 = y1
-        x2 = x1 - pStep * mulPIn(PReg, gradf(x1) + mulWT(y0))
+        x2 = x1 - pStep * mulPIn(PReg, gradf_x1 + mulWT(y0))
         x1Sum += x2
         x2 = x1Sum / kMax
-        if f(x2) <= f(x1) + sInner(gradf(x1), x2 - x1) + L / 2 * sInner(x2 - x1, mulP(PReg, x2 - x1)):
+        x2MinusX1 = x2 - x1
+        if f(x2) <= f(x1) + sInner(gradf_x1, x2MinusX1) + L / 2 * sInner(x2MinusX1, mulP(PReg, x2MinusX1)):
             break
         L *= dInv
     return x1, x2, None, y1, L, 0, 0
