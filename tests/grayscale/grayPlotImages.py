@@ -94,13 +94,13 @@ def main(suffixNPD, suffixPNPD, suffixNPDIT, recIndexes):
     for axis in ax:
         axis.axis('off')
     ax[0].imshow(conv, cmap='gray', vmin = 0, vmax = 1)
-    ax[0].set_title('$b$')
+    ax[0].set_title('$\\tilde b$')
     ax[0].text(1.15, .5, "$+$", fontsize=20, transform = ax[0].transAxes)
     ax[1].imshow(noise, cmap='gray', vmin = noise.min()/2, vmax = noise.max()/2)
-    ax[1].set_title('$n$')
+    ax[1].set_title('$e$')
     ax[1].text(1.15, .5, "$=$", fontsize=20, transform = ax[1].transAxes)
     ax[2].imshow(b, cmap='gray', vmin = 0, vmax = 1)
-    ax[2].set_title('$b = \\tilde b + n$')
+    ax[2].set_title('$b = \\tilde b + e$')
     plt.savefig(savePath(f'{grayConfig.prefix}/BlurredPlusNoise.pdf'), bbox_inches='tight', dpi=1200)
 
     # Plot image * PSF = conv Convolution example

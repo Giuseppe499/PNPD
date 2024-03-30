@@ -13,11 +13,13 @@ Plot = True
 recIndexes = [20, 150]
 grayConfig.recIndexes = recIndexes
 
-for i in range(1,5):
+for i in range(2,3):
     grayConfig.prefix = f"grayEx{i}"
     grayConfig.maxIt = 150
     grayConfig.kMax = 1
     grayConfig.nu = None
+    kMaxx = 1
+    lamPNPD = None
 
     if i == 1:
         Comparison = True
@@ -41,10 +43,12 @@ for i in range(1,5):
         psf = gaussianPSF(n, 2)
     elif i == 2:
         IMGPATH = "cameraman.tif"
-        grayConfig.noisePercent = 0.02 
+        grayConfig.noisePercent = 0.05 
 
-        lamm =  1e-3
+        lamm =  3e-3
+        lamPNPD = 2e-2
         nuu = 1e-1
+        kMaxx = 8
 
         image = Image.open(IMGPATH)
         image = np.asarray(image) / 255
@@ -98,6 +102,8 @@ for i in range(1,5):
     # Generate blurred image
     grayGenerateBlurredImage.main()
 
+    grayConfig.kMax = kMaxx
+
     grayConfig.momentum = True  
     # NPD
     grayConfig.lam =  lamm
@@ -121,7 +127,10 @@ for i in range(1,5):
     if Compute:
         grayNPDIT.main()
 
-    grayConfig.lam = lamm/grayConfig.nu
+    if lamPNPD is None:
+        grayConfig.lam = lamm/grayConfig.nu
+    else:
+        grayConfig.lam = lamPNPD
     # PNPD
     grayConfig.momentum = True
     grayConfig.suffix = grayConfig.generateSuffix()
@@ -163,7 +172,7 @@ for i in range(1,5):
 
         grayConfig.momentum = True
         grayConfig.nu = nuu
-        lamList = [lamm*val for val in [1e2, 1e1, 1e0]]
+        lamList = [lamm*val for val in [1e1, 1e0]]
         # PNPD kMax Comparison
         kMaxList = [10,5,2,1]
         PNPD_Kmax_suffix_lam = []
@@ -177,6 +186,19 @@ for i in range(1,5):
                 if Compute:
                     grayPNPD.main()
             PNPD_Kmax_suffix_lam.append(PNPD_Kmax_suffix)
+
+        #NPDIT kMax Comparison
+        NPDIT_Kmax_suffix_lam = []
+        for lamb in lamList:
+            grayConfig.lam = lamb
+            NPDIT_Kmax_suffix = []
+            for kMax in kMaxList:
+                grayConfig.kMax = kMax
+                grayConfig.suffix = grayConfig.generateSuffix()
+                NPDIT_Kmax_suffix.append(grayConfig.suffix)
+                if Compute:
+                    grayNPDIT.main()
+            NPDIT_Kmax_suffix_lam.append(NPDIT_Kmax_suffix)      
 
         # PNPD low nu no momentum vs high nu and momentum vs high nu, momentum and high kMax
         nuListComp = [1e-1, 1e-2, 1e-2, 1e-2, 1e-2]
@@ -221,12 +243,20 @@ for i in range(1,5):
             saveStr = f"PNPD_nu_NM"
             grayPlotRRESSIM.main(filenameList, nameList, saveStr=saveStr, title=title, showStop=False)
 
-            # kMax Comparison
+            # PNPD kMax Comparison
             for i in range(len(lamList)):
                 filenameList = [f"PNPD_{suffix}" for suffix in PNPD_Kmax_suffix_lam[i]]
                 nameList = [f"PNPD $k_{{max}}= {kMax}$" for kMax in kMaxList]
                 title = f"PNPD $\lambda = {lamList[i]}$, $k_{{max}}= {kMaxList}$"
                 saveStr = f"PNPD_K_l{lamList[i]}"
+                grayPlotRRESSIM.main(filenameList, nameList, saveStr=saveStr, title=title, showStop=False)
+
+            # NPDIT kMax Comparison
+            for i in range(len(lamList)):
+                filenameList = [f"NPDIT_{suffix}" for suffix in NPDIT_Kmax_suffix_lam[i]]
+                nameList = [f"NPDIT $k_{{max}}= {kMax}$" for kMax in kMaxList]
+                title = f"NPDIT $\lambda = {lamList[i]}$, $k_{{max}}= {kMaxList}$"
+                saveStr = f"NPDIT_K_l{lamList[i]}"
                 grayPlotRRESSIM.main(filenameList, nameList, saveStr=saveStr, title=title, showStop=False)
 
             # PNPD low nu no momentum vs high nu and momentum
