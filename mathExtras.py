@@ -31,9 +31,9 @@ def softTreshold(alpha, x: np.array):
     return np.sign(x) * np.maximum(abs(x) - alpha, 0)
 
 
-def gradLeastSquares(x, bFFT, psfFFT, psfFFTC):
-    xFFT = fft2(x)
-    return np.real(ifft2(psfFFTC * (psfFFT * xFFT - bFFT)))
+def gradLeastSquares(x, bFFT, psfFFT, psfFFTC, axes = (0, 1)):
+    xFFT = fft2(x, axes=axes)
+    return np.real(ifft2(psfFFTC * (psfFFT * xFFT - bFFT), axes=axes))
 
 def gradLeastSquaresRGB(x, bFFT, psfFFT, psfFFTC):
     grad = np.zeros(x.shape)
@@ -42,8 +42,8 @@ def gradLeastSquaresRGB(x, bFFT, psfFFT, psfFFTC):
     return grad
     
 
-def mulPInLeastSquares(mu, x, psfAbsSq):
-    return np.real(ifft2(fft2(x) / (psfAbsSq + mu)))
+def mulPInLeastSquares(mu, x, psfAbsSq, axes = (0, 1)):
+    return np.real(ifft2(fft2(x, axes=axes) / (psfAbsSq + mu), axes=axes))
 
 def mulPInLeastSquaresRGB(mu, x, psfAbsSq):
     mul = np.zeros(x.shape)
@@ -51,8 +51,8 @@ def mulPInLeastSquaresRGB(mu, x, psfAbsSq):
         mul[:,:,i] = mulPInLeastSquares(mu, x[:,:,i], psfAbsSq)
     return mul
 
-def mulPLeastSquares(mu, x, psfAbsSq):
-    return np.real(ifft2(fft2(x) * (psfAbsSq + mu)))
+def mulPLeastSquares(mu, x, psfAbsSq, axes = (0, 1)):
+    return np.real(ifft2(fft2(x, axes=axes) * (psfAbsSq + mu), axes=axes))
 
 def grad2D(m: np.array):
     dx = np.roll(m, -1, axis=-2) - m
@@ -93,8 +93,8 @@ def proxhsTVrgb(lam: float, dxdy: np.array):
     return dxdy
 
 
-def fftConvolve2D(in1, in2):
-    return np.real(ifft2(fft2(in1) * fft2(in2)))
+def fftConvolve2D(in1, in2, axes = (0, 1)):
+    return np.real(ifft2(fft2(in1, axes=axes) * fft2(in2, axes=axes), axes=axes))
 
 def fftConvolve2Drgb(in1, in2):
     return np.stack([fftConvolve2D(in1[:,:,i], in2) for i in range(3)], axis=-1)
