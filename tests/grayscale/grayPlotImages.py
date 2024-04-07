@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from tests.plotExtras import *
-from mathExtras import (centerCrop, gaussianPSF, fftConvolve2D)
+from mathExtras import (center_crop, generate_gaussian_PSF, convolve_2D_fft)
 import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
@@ -67,7 +67,7 @@ def main(suffixNPD, suffixPNPD, suffixNPDIT, recIndexes):
     cropSize = 20
     plt.figure()
     plt.axis('off')
-    plt.imshow(centerCrop(psfBT, (cropSize, cropSize)), cmap='gray')
+    plt.imshow(center_crop(psfBT, (cropSize, cropSize)), cmap='gray')
     plt.title(f'PSF (cropped to {cropSize}x{cropSize})')
     plt.savefig(savePath(f'{grayConfig.prefix}/PSF.pdf'), bbox_inches='tight', dpi=300)
 
@@ -81,7 +81,7 @@ def main(suffixNPD, suffixPNPD, suffixNPDIT, recIndexes):
     ax[0].imshow(image, cmap='gray', vmin = 0, vmax = 1)
     ax[0].set_title('$x$')
     ax[0].text(1.05, .5, "$\circledast_{2D}$", fontsize=20, transform = ax[0].transAxes)
-    ax[1].imshow(centerCrop(psfBT, (cropSize, cropSize)), cmap='gray')
+    ax[1].imshow(center_crop(psfBT, (cropSize, cropSize)), cmap='gray')
     ax[1].set_title(f'PSF\n(center crop of size {cropSize}x{cropSize})')
     ax[1].text(1.15, .5, "$=$", fontsize=20, transform = ax[1].transAxes)
     ax[2].imshow(conv, cmap='gray', vmin = 0, vmax = 1)
@@ -104,9 +104,9 @@ def main(suffixNPD, suffixPNPD, suffixNPDIT, recIndexes):
     plt.savefig(savePath(f'{grayConfig.prefix}/BlurredPlusNoise.pdf'), bbox_inches='tight', dpi=1200)
 
     # Plot image * PSF = conv Convolution example
-    psfEXBT = gaussianPSF(image.shape[0], 10)
+    psfEXBT = generate_gaussian_PSF(image.shape[0], 10)
     psfEX = np.roll(psfEXBT, (-psfEXBT.shape[0] // 2, -psfEXBT.shape[0] // 2), axis=(0, 1))
-    convEX = fftConvolve2D(image, psfEX)
+    convEX = convolve_2D_fft(image, psfEX)
     fig, ax = plt.subplots(1, 3)
     fig.subplots_adjust(wspace=0.5)
     for axis in ax:

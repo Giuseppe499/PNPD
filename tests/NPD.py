@@ -19,11 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 from mathExtras import (
-    gradLeastSquares,
-    grad2D,
-    div2D,
-    proxhsTV,
-    mulPInLeastSquares,
+    gradient_convolution_least_squares,
+    gradient_2D_signal,
+    divergence_2D_signal,
+    prox_h_star_TV,
+    multiply_P_inverse,
 )
 from solvers import NPD, NPD_parameters, NPD_functions
 
@@ -42,10 +42,10 @@ parameters = NPD_parameters(maxIter=20, alpha=1, beta=1 / 8, kMax=1, extrapolati
 lam = 1e-4  # TV regularization parameter
 
 functions = NPD_functions(
-    grad_f=lambda x: gradLeastSquares(x, bFFT, psfFFT, psfFFTC),
-    prox_h_star=lambda alpha, x: proxhsTV(lam, x),
-    mulW=grad2D,
-    mulWT=div2D,
+    grad_f=lambda x: gradient_convolution_least_squares(x, bFFT, psfFFT, psfFFTC),
+    prox_h_star=lambda alpha, x: prox_h_star_TV(lam, x),
+    mulW=gradient_2D_signal,
+    mulWT=divergence_2D_signal,
 )
 
 ################################################################################

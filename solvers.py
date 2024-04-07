@@ -23,7 +23,7 @@ import numpy as np
 from numpy.linalg import norm
 from numpy.fft import fft2, ifft2
 from skimage.metrics import structural_similarity as ssim
-from mathExtras import sInner
+from mathExtras import scalar_product
 from dataclasses import dataclass
 
 import time
@@ -348,7 +348,7 @@ def NPDIT_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
         x1Sum += x2
         x2 = x1Sum / kMax
         x2MinusXBar = x2 - xBar
-        if f(x2) <= f(xBar) + sInner(gradf_xBar, x2MinusXBar) + L / 2 * sInner(x2MinusXBar, mulP(PReg, x2MinusXBar)):
+        if f(x2) <= f(xBar) + scalar_product(gradf_xBar, x2MinusXBar) + L / 2 * scalar_product(x2MinusXBar, mulP(PReg, x2MinusXBar)):
             break
         L *= dInv
     return x1, x2, t, y1, L, gamma, gammaFFBS
@@ -374,7 +374,7 @@ def NPDIT_step_no_momentum(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: 
         x1Sum += x2
         x2 = x1Sum / kMax
         x2MinusX1 = x2 - x1
-        if f(x2) <= f(x1) + sInner(gradf_x1, x2MinusX1) + L / 2 * sInner(x2MinusX1, mulP(PReg, x2MinusX1)):
+        if f(x2) <= f(x1) + scalar_product(gradf_x1, x2MinusX1) + L / 2 * scalar_product(x2MinusX1, mulP(PReg, x2MinusX1)):
             break
         L *= dInv
     return x1, x2, None, y1, L, 0, 0

@@ -21,40 +21,27 @@ import numpy as np
 from numpy.fft import fft2, ifft2
 
 
-def sInner(x: np.array, y: np.array = None):
+def scalar_product(x: np.array, y: np.array = None):
     if y is not None:
         return np.inner(x.ravel(), y.ravel())
     return np.inner(x.ravel(), x.ravel())
 
 
-def softTreshold(alpha, x: np.array):
+def soft_threshold(alpha, x: np.array):
     return np.sign(x) * np.maximum(abs(x) - alpha, 0)
 
 
-def gradLeastSquares(x, bFFT, psfFFT, psfFFTC, axes = (0, 1)):
+def gradient_convolution_least_squares(x, bFFT, psfFFT, psfFFTC, axes = (0, 1)):
     xFFT = fft2(x, axes=axes)
-    return np.real(ifft2(psfFFTC * (psfFFT * xFFT - bFFT), axes=axes))
+    return np.real(ifft2(psfFFTC * (psfFFT * xFFT - bFFT), axes=axes))    
 
-def gradLeastSquaresRGB(x, bFFT, psfFFT, psfFFTC):
-    grad = np.zeros(x.shape)
-    for i in range(3):
-        grad[:,:,i] = gradLeastSquares(x[:,:,i], bFFT[:,:,i], psfFFT, psfFFTC)
-    return grad
-    
-
-def mulPInLeastSquares(mu, x, psfAbsSq, axes = (0, 1)):
+def multiply_P_inverse(mu, x, psfAbsSq, axes = (0, 1)):
     return np.real(ifft2(fft2(x, axes=axes) / (psfAbsSq + mu), axes=axes))
 
-def mulPInLeastSquaresRGB(mu, x, psfAbsSq):
-    mul = np.zeros(x.shape)
-    for i in range(3):
-        mul[:,:,i] = mulPInLeastSquares(mu, x[:,:,i], psfAbsSq)
-    return mul
-
-def mulPLeastSquares(mu, x, psfAbsSq, axes = (0, 1)):
+def multiply_P(mu, x, psfAbsSq, axes = (0, 1)):
     return np.real(ifft2(fft2(x, axes=axes) * (psfAbsSq + mu), axes=axes))
 
-def grad2D(m: np.array):
+def gradient_2D_signal(m: np.array):
     dx = np.roll(m, -1, axis=-2) - m
     dy = np.roll(m, -1, axis=-1) - m
     # Comment for periodic boundary conditions
@@ -62,10 +49,7 @@ def grad2D(m: np.array):
     dy[...,:, -1] = 0
     return np.stack((dx, dy))
 
-def grad2Drgb(m: np.array):
-    return np.stack([grad2D(m[:,:,i]) for i in range(3)], axis=-1)
-
-def div2D(dxdy: np.array):
+def divergence_2D_signal(dxdy: np.array):
     dx = dxdy[0, ...]
     dy = dxdy[1, ...]
     fx = np.roll(dx, 1, axis=-2) - dx
@@ -76,10 +60,7 @@ def div2D(dxdy: np.array):
     fy[..., :, -1] = dy[..., :, -2]
     return fx + fy
 
-def div2Drgb(dxdy: np.array):
-    return np.stack([div2D(dxdy[:,:,:,i]) for i in range(3)], axis=-1)
-
-def proxhsTV(lam: float, dxdy: np.array):
+def prox_h_star_TV(lam: float, dxdy: np.array):
     dx = dxdy[0,...]
     dy = dxdy[1,...]
     factor = np.sqrt(dx*dx + dy*dy)
@@ -87,20 +68,10 @@ def proxhsTV(lam: float, dxdy: np.array):
     factor = np.stack((factor, factor))
     return dxdy / factor
 
-def proxhsTVrgb(lam: float, dxdy: np.array):
-    for i in range(3):
-        dxdy[:,:,:,i] = proxhsTV(lam, dxdy[:,:,:,i])
-    return dxdy
-
-
-def fftConvolve2D(in1, in2, axes = (0, 1)):
+def convolve_2D_fft(in1, in2, axes = (0, 1)):
     return np.real(ifft2(fft2(in1, axes=axes) * fft2(in2, axes=axes), axes=axes))
 
-def fftConvolve2Drgb(in1, in2):
-    return np.stack([fftConvolve2D(in1[:,:,i], in2) for i in range(3)], axis=-1)
-
-
-def gaussianPSF(size: int, sigma: float) -> np.array:
+def generate_gaussian_PSF(size: int, sigma: float) -> np.array:
     """
     Generate a Gaussian Point Spread Function (PSF) matrix.
 
@@ -124,7 +95,7 @@ def gaussianPSF(size: int, sigma: float) -> np.array:
 
     return psfMatrix
 
-def outOfFocusPSF(size: int, radius: int) -> np.array:
+def generate_out_of_focus_PSF(size: int, radius: int) -> np.array:
     """
     Generate a PSF matrix for an out-of-focus lens.
 
@@ -152,7 +123,7 @@ def outOfFocusPSF(size: int, radius: int) -> np.array:
 
     return psfMatrix
 
-def centerCrop(image, target_size=(256, 256)):
+def center_crop(image, target_size: tuple[int, int]):
     h = image.shape[0]
     w = image.shape[1]
     th, tw = target_size
@@ -166,15 +137,13 @@ def centerCrop(image, target_size=(256, 256)):
 
     return cropped_image
 
-def padWithZeros(image, target_size=(256, 256)):
+def pad_with_zeros(image: np.ndarray, target_size: tuple[int, int]):
     h, w, _ = image.shape
     th, tw = target_size
 
-    # Calculate the starting point for the crop
     i = int(round((th - h) / 2.))
     j = int(round((tw - w) / 2.))
 
-    # Perform the crop
     padded_image = np.zeros((th, tw, 3))
     padded_image[i:i+h, j:j+w] = image
 

@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from PIL import Image
 import numpy as np
 from numpy.fft import fft2
-from mathExtras import fftConvolve2D, gaussianPSF, sInner
+from mathExtras import convolve_2D_fft, generate_gaussian_PSF, scalar_product
 import grayConfig
 import os
 
@@ -31,12 +31,12 @@ def main():
     psfBT = grayConfig.psfBT
 
     # Generate blurred image
-    conv = fftConvolve2D(image, psf)
+    conv = convolve_2D_fft(image, psf)
 
     # Generate noise
     noise = np.random.normal(size=image.shape)
     noise *= noisePercent * np.linalg.norm(conv) / np.linalg.norm(noise)
-    noiseNormSqd = sInner(noise.ravel())
+    noiseNormSqd = scalar_product(noise.ravel())
 
     # Add noise to blurred image
     b = np.clip(conv + noise, 0, 1)
@@ -65,7 +65,7 @@ def main():
         print(image.shape)
 
         # Generate PSF
-        psf = gaussianPSF(n, 1.6)
+        psf = generate_gaussian_PSF(n, 1.6)
         psfBT = psf.copy()
         # Center PSF
         psf = np.roll(psf, (-psf.shape[0] // 2, -psf.shape[0] // 2), axis=(0, 1))

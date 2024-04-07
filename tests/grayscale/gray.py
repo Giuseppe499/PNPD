@@ -5,7 +5,7 @@ from tests.grayscale import grayPlotImages
 from PIL import Image
 import numpy as np
 import scipy.io as sio
-from mathExtras import gaussianPSF, outOfFocusPSF
+from mathExtras import generate_gaussian_PSF, generate_out_of_focus_PSF
 import grayConfig
 
 Compute = True
@@ -40,7 +40,7 @@ for i in range(2,3):
         print(image.shape)
 
         # Generate PSF
-        psf = gaussianPSF(n, 2)
+        psf = generate_gaussian_PSF(n, 2)
     elif i == 2:
         IMGPATH = "cameraman.tif"
         grayConfig.noisePercent = 0.05 
@@ -57,7 +57,7 @@ for i in range(2,3):
         print(image.shape)
 
         # Generate PSF
-        psf = gaussianPSF(n, 2)
+        psf = generate_gaussian_PSF(n, 2)
     elif i == 3:
         IMGPATH = "peppers.tiff"
         grayConfig.noisePercent = 0.01
@@ -72,7 +72,7 @@ for i in range(2,3):
         print(image.shape)
 
         # Generate PSF
-        psf = outOfFocusPSF(n, 7.5)
+        psf = generate_out_of_focus_PSF(n, 7.5)
     elif i ==4:
         IMGPATH = "peppers.tiff"
         grayConfig.noisePercent = 0.01

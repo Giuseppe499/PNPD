@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import numpy as np
-from mathExtras import (sInner, gradLeastSquares, grad2D, div2D, proxhsTV,
-                        fftConvolve2D, mulPInLeastSquares)
+from mathExtras import (scalar_product, gradient_convolution_least_squares, gradient_2D_signal, divergence_2D_signal, prox_h_star_TV,
+                        convolve_2D_fft, multiply_P_inverse)
 from solvers import PNPD
 import grayConfig
 
@@ -43,12 +43,12 @@ def main():
     dp = 1.02 # Discrepancy principle parameter
     kMax = grayConfig.kMax # Number of dual iterations
 
-    gradf=lambda x: gradLeastSquares(x, bFFT, psfFFT, psfFFTC)
-    proxhs=lambda alpha, x: proxhsTV(lam, x)
-    mulW=grad2D
-    mulWT=div2D
-    mulPIn=lambda mu, x: mulPInLeastSquares(mu, x, psfAbsSq)
-    f=lambda x: sInner(fftConvolve2D(x, psf) - b)
+    gradf=lambda x: gradient_convolution_least_squares(x, bFFT, psfFFT, psfFFTC)
+    proxhs=lambda alpha, x: prox_h_star_TV(lam, x)
+    mulW=gradient_2D_signal
+    mulWT=divergence_2D_signal
+    mulPIn=lambda mu, x: multiply_P_inverse(mu, x, psfAbsSq)
+    f=lambda x: scalar_product(convolve_2D_fft(x, psf) - b)
     rho = lambda i: 1 / (i + 1) ** 1.1
 
     ################################################################################
