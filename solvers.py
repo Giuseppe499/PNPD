@@ -52,24 +52,52 @@ def deblur_image_Thikonov_with_prediction(blurred_image, psf, predicted_image, a
         )
     )
 
-
 @dataclass
 class FBS_functions:
     grad_f: Callable[[np.ndarray], np.ndarray]
     prox_g: Callable[[float, np.ndarray], np.ndarray] = None
+    metrics: dict[str, Callable[[np.ndarray, np.ndarray], float]] = None
 
 
 @dataclass
 class FBS_parameters:
     alpha: float
     maxIter: int
+    verbose: bool = True
     startIteration: int = 1
     iteration: int = None
+    ground_truth: np.ndarray = None
 
 
 def FBS(x1: np.ndarray, parameters: FBS_parameters, functions: FBS_functions):
     return genericFBS(x1, parameters, functions, FBS_step)
 
+def metrics_decorator(generic_FBS):
+    def wrapper(*args, **kwargs):
+        metrics_functions = kwargs.get("metrics_functions", None)
+        kwargs.pop("metrics_functions", None)
+        ground_truth = kwargs.get("ground_truth", None)
+        kwargs.pop("ground_truth", None)
+
+        # Time the function
+        start = time.process_time()
+        result = generic_FBS(*args, **kwargs)
+        elapsed = time.process_time() - start
+
+        # Compute metrics
+        metrics_results = {}
+        metrics_results["time"] = elapsed
+        for key, value in metrics_functions.items():
+            metrics_results[key] = value(result[0], ground_truth=ground_truth)
+
+        return result, metrics_results
+    return wrapper
+
+def image_metrics():
+    return {
+        "SSIM": lambda x, ground_truth: ssim(x, ground_truth, data_range=1),
+        "RRE": lambda x, ground_truth: norm(x - ground_truth) / norm(ground_truth),
+    }
 
 def genericFBS(
     x1: np.ndarray,
@@ -79,12 +107,45 @@ def genericFBS(
         [np.ndarray, FBS_parameters, FBS_functions], tuple[np.ndarray, ...]
     ],
 ):
+    metrics_results = None
+    metrics_flag = functions.metrics is not None
+    if metrics_flag:
+        old_step = step
+        step = lambda x1, par, fun: metrics_decorator(old_step)(x1, par, fun, metrics_functions=functions.metrics, ground_truth=parameters.ground_truth)
+        metrics_results = initialize_metrics_dict(x1, functions.metrics, parameters.ground_truth)
     for parameters.iteration in range(
         parameters.startIteration, parameters.maxIter
     ):
-        x1 = step(x1, parameters, functions)[0]
-    return x1
+        tmp = step(x1, parameters, functions)
+        info = f"Iteration {parameters.iteration}, "
+        if metrics_flag:
+            x1 = tmp[0][0]
+            new_metrics_results = tmp[1]
+            info += info_string_from_metrics(new_metrics_results)
+            print(info) if parameters.verbose else None
+            update_metrics_dict(metrics_results, new_metrics_results)           
+        else:
+            x1 = tmp[0]
 
+    return x1, metrics_results
+
+def initialize_metrics_dict(x1, metrics_functions, ground_truth):
+    metrics_results = {}
+    metrics_results["time"] = [0]
+    for key, value in metrics_functions.items():
+        metrics_results[key] = [value(x1, ground_truth=ground_truth)]
+    return metrics_results
+
+def update_metrics_dict(metrics_results, new_metrics_results):
+    metrics_results["time"].append(new_metrics_results["time"])
+    for key, value in new_metrics_results.items():
+            metrics_results[key].append(value)
+
+def info_string_from_metrics(new_metrics_results):
+    info = ""
+    for key, value in new_metrics_results.items():
+        info += f"{key}: {value}, "
+    return info
 
 def FBS_step(
     x1: np.ndarray, parameters: FBS_parameters, functions: FBS_functions
