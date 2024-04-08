@@ -97,7 +97,8 @@ if __name__ == "__main__":
         psfCentered[..., 1] = generate_out_of_focus_PSF(n, 6)
         psfCentered[..., 2] = generate_out_of_focus_PSF(n, 10)
         print(f"PSF size: {psfCentered.shape}")
-    # Center PSF
+
+    # Move PSF center to the top-left corner
     psf = np.roll(
         psfCentered,
         (-psfCentered.shape[0] // 2, -psfCentered.shape[0] // 2),
