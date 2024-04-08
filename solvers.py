@@ -29,26 +29,26 @@ from dataclasses import dataclass
 import time
 
 
-def deConvolve2D(conv, psf, epsilon: float):
-    return np.real(ifft2(fft2(conv) / np.clip(fft2(psf), epsilon, None)))
+def deblur_image_naive(blurred_image, psf, epsilon: float):
+    return np.real(ifft2(fft2(blurred_image) / np.clip(fft2(psf), epsilon, None)))
 
 
-def deConvolve2DThikonov(conv, psf, alpha):
-    psfFFT = fft2(psf)
-    psfFFTC = np.conjugate(psfFFT)
-    convFFT = fft2(conv)
-    return np.real(ifft2(psfFFTC * convFFT / (psfFFTC * psfFFT + alpha)))
+def deblur_image_Thikonov(blurred_image, psf, alpha):
+    psf_FFT = fft2(psf)
+    psf_FFTC = np.conjugate(psf_FFT)
+    blurred_image_FFT = fft2(blurred_image)
+    return np.real(ifft2(psf_FFTC * blurred_image_FFT / (psf_FFTC * psf_FFT + alpha)))
 
 
-def deConvolve2DThikonovPlusEstimate(conv, psf, estimate, alpha):
-    psfFFT = fft2(psf)
-    psfFFTC = np.conjugate(psfFFT)
-    estimateFFT = fft2(estimate)
-    convFFT = fft2(conv)
+def deblur_image_Thikonov_with_prediction(blurred_image, psf, predicted_image, alpha):
+    psf_FFT = fft2(psf)
+    psf_FFTC = np.conjugate(psf_FFT)
+    predicted_image_FFT = fft2(predicted_image)
+    blurred_image_FFT = fft2(blurred_image)
     return np.real(
         ifft2(
-            (psfFFTC * convFFT + alpha * estimateFFT)
-            / (psfFFTC * psfFFT + alpha)
+            (psf_FFTC * blurred_image_FFT + alpha * predicted_image_FFT)
+            / (psf_FFTC * psf_FFT + alpha)
         )
     )
 
