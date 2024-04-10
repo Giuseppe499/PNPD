@@ -25,8 +25,9 @@ from mathExtras import (
     prox_h_star_TV,
     multiply_P_inverse,
 )
-from solvers import NPD, NPD_parameters, NPD_functions
+from solvers import NPD, NPD_parameters, NPD_functions, image_metrics
 
+# Load data (generated with generateBlurredImage.py)
 with np.load(f"./npz/Blurred.npz") as data:
     b = data["b"]
     bFFT = data["bFFT"]
@@ -37,21 +38,24 @@ with np.load(f"./npz/Blurred.npz") as data:
     image = data["image"]
     noiseNormSqd = data["noiseNormSqd"]
 
-parameters = NPD_parameters(maxIter=20, alpha=1, beta=1 / 8, kMax=1, extrapolation=False)
+parameters = NPD_parameters(maxIter=150, alpha=1, beta=1 / 8, kMax=1, extrapolation=True, ground_truth=image)
 
 lam = 1e-4  # TV regularization parameter
+
+metrics = image_metrics()
 
 functions = NPD_functions(
     grad_f=lambda x: gradient_convolution_least_squares(x, bFFT, psfFFT, psfFFTC),
     prox_h_star=lambda alpha, x: prox_h_star_TV(lam, x),
     mulW=gradient_2D_signal,
     mulWT=divergence_2D_signal,
+    metrics=image_metrics()
 )
 
 ################################################################################
 # NPD
 print("NPD")
-imRec = NPD(x1=b, parameters=parameters, functions=functions)
+imRec, metrics_results = NPD(x1=b, parameters=parameters, functions=functions)
 print("\n\n\n\n")
 
 np.savez(f"./npz/NPD.npz", imRec=imRec)
@@ -76,4 +80,11 @@ if Plot:
     ax[1].imshow(imRec, cmap=cmap, vmin=0, vmax=1)
     ax[1].set_title("Recovered image")
     ax[1].axis("off")
+
+    
+    for key, value in metrics_results.items():
+        plt.figure()
+        plt.plot(value, label=key)
+        plt.legend()
+        plt.title(key)
     plt.show()
