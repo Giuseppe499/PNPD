@@ -356,3 +356,6 @@ class NPDIT_prox_estimator(NPD_prox_estimator):
     ):
         x2 = x1 - parameters.alpha * functions.mulP_inv(parameters.grad_f_x1 + functions.mulWT(parameters.y1))
         return x2
+
+def NPDIT_no_backtracking(x1: np.ndarray, parameters: PNPD_parameters, functions: PNPD_functions):
+    return generic_NPD(x1, parameters, functions, NPDIT_prox_estimator.primal_dual_prox_estimator)
