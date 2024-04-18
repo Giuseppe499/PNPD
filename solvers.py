@@ -68,6 +68,8 @@ class FBS_parameters:
     iteration: int = None
     ground_truth: np.ndarray = None
 
+    def reset(self):
+        self.iteration = None
 
 def FBS(x1: np.ndarray, parameters: FBS_parameters, functions: FBS_functions):
     return genericFBS(x1, parameters, functions, FBS_step)
@@ -160,6 +162,11 @@ class FFBS_parameters(FBS_parameters):
     x0: np.ndarray = None
     t0: float = 1
 
+    def reset(self):
+        super().reset()
+        self.x0 = None
+        self.t0 = 1
+
 
 def FFBS(x1: np.ndarray, parameters: FFBS_parameters, functions: FBS_functions):
     return genericFBS(x1, parameters, functions, FFBS_step)
@@ -192,7 +199,15 @@ class NPD_parameters(FFBS_parameters):
     C: float = 1
     rho_i: float = 1
     extrapolation: bool = True
-    y0 = None
+    y1 = None
+    grad_f_x1 = None
+
+    def reset(self):
+        super().reset()
+        self.C = 1
+        self.rho_i = 1
+        self.y1 = None
+        self.grad_f_x1 = None
 
 
 @dataclass
@@ -208,46 +223,62 @@ def NPD_no_extrapolation_step(
     parameters.rho_i = functions.rho(parameters.iteration)
     return FBS_step(x1, parameters, functions), parameters
 
-def primal_dual_prox_estimator(
-    alpha: float,
-    x1: np.ndarray,
-    parameters: NPD_parameters,
-    functions: NPD_functions,
-):
-    gradf_x1 = functions.grad_f(x1)
-    x2, parameters = primal_dual_step(x1, gradf_x1, parameters, functions)
-    xSum = np.zeros(x1.shape)
-    for k in range(1, parameters.kMax):
-        x2, parameters = primal_dual_step(x1, gradf_x1, parameters, functions)
+class NPD_prox_estimator:
+    @classmethod
+    def primal_dual_prox_estimator(
+        cls,
+        alpha: float,
+        x1: np.ndarray,
+        parameters: NPD_parameters,
+        functions: NPD_functions,
+    ):
+        cls.common_computations(x1, parameters, functions)
+        x2, parameters = cls.primal_dual_step(x1, parameters, functions)
+        xSum = np.zeros(x1.shape)
+        for k in range(1, parameters.kMax):
+            x2, parameters = cls.primal_dual_step(x1, parameters, functions)
+            xSum += x2
+        x2 = cls.primal_step(x1, parameters, functions)
         xSum += x2
-    x2, parameters = primal_dual_step(x1, gradf_x1, parameters, functions)
-    xSum += x2
-    return xSum / parameters.kMax, parameters
-
-
-def primal_step(
-    x1: np.ndarray,
-    gradf_x1: np.ndarray,
-    parameters: NPD_parameters,
-    functions: NPD_functions,
-):
-    x2 = x1 - parameters.alpha * (gradf_x1 + functions.mulWT(parameters.y0))
-    return x2
-
-
-def primal_dual_step(
-    x1: np.ndarray,
-    gradf_x1: np.ndarray,
-    parameters: NPD_parameters,
-    functions: NPD_functions,
-):
-    x2 = primal_step(x1, gradf_x1, parameters, functions)
-    stepsize = parameters.beta / parameters.alpha
-    y1 = functions.prox_h_star(
-        stepsize, parameters.y0 + stepsize * functions.mulW(x2)
-    )
-    parameters.y0 = y1
-    return x2, parameters
+        return xSum / parameters.kMax, parameters
+    
+    @classmethod
+    def common_computations(cls, x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions):
+        parameters.grad_f_x1 = functions.grad_f(x1)
+        return parameters
+    
+    @classmethod
+    def primal_step(
+        cls,
+        x1: np.ndarray,
+        parameters: NPD_parameters,
+        functions: NPD_functions
+    ):
+        x2 = x1 - parameters.alpha * (parameters.grad_f_x1 + functions.mulWT(parameters.y1))
+        return x2
+    
+    @classmethod
+    def dual_step(
+        cls,
+        x2: np.ndarray,
+        parameters: NPD_parameters,
+        functions: NPD_functions
+    ):
+        stepsize = parameters.beta / parameters.alpha
+        y2 = functions.prox_h_star(stepsize, parameters.y1 + stepsize * functions.mulW(x2))
+        return y2
+    
+    @classmethod
+    def primal_dual_step(
+        cls,
+        x1: np.ndarray,
+        parameters: NPD_parameters,
+        functions: NPD_functions,
+    ):
+        x2 = cls.primal_step(x1, parameters, functions)
+        y2 = cls.dual_step(x2, parameters, functions)
+        parameters.y1 = y2
+        return x2, parameters
 
 
 def NPD_step(
@@ -267,9 +298,12 @@ def gammaNPD(t0: float, C: float, rho_i: float, xDiffNorm: float):
     return gamma, t1
 
 def NPD(x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions):
+    return generic_NPD(x1, parameters, functions, NPD_prox_estimator.primal_dual_prox_estimator)
+
+def generic_NPD(x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions, prox_estimator: Callable):
     parameters.x0 = x1
-    parameters.y0 = np.zeros(functions.mulW(x1).shape)
-    functions.prox_g = lambda alpha, x: primal_dual_prox_estimator(
+    parameters.y1 = np.zeros(functions.mulW(x1).shape)
+    functions.prox_g = lambda alpha, x: prox_estimator(
         alpha, x, parameters, functions
     )[0]
     if parameters.extrapolation:
@@ -278,224 +312,48 @@ def NPD(x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions):
         step = NPD_no_extrapolation_step
 
     # First step: needed to compute C
-    parameters.iteration = 1
+    parameters.iteration = parameters.startIteration
     x1 = step(x1, parameters, functions)[0]
     parameters.C = 10 * norm(x1 - parameters.x0)
-    parameters.startIteration = 2
-    return genericFBS(x1, parameters, functions, step)
+    parameters.startIteration += 1
+    result = genericFBS(x1, parameters, functions, step)
+    parameters.startIteration -= 1
+    return result
 
-def PNPD_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
-               mulWT: Callable, mulPIn: Callable, pStep: float, dStep: float,
-               PReg: float, t0: float, C: float, rho_i: float, kMax: int = 1):
-    t = .5 + .5 * np.sqrt(1 + 4 * t0 * t0)
-    gammaFFBS = (t0 - 1) / t
-    gamma = min(gammaFFBS, C*rho_i / (norm(x1 - x0)))
-    xBar = x1 + gamma * (x1 - x0)
-    # Primal Dual Iteration
-    #k = 0
-    mulPinxBar = mulPIn(PReg, gradf(xBar))
-    x2 = xBar - pStep * (mulPinxBar + mulWT(y0))
-    y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
-    y0 = y1
-    x1Sum = np.zeros(x1.shape)
-    for k in range(1,kMax):
-        x2 = xBar - pStep * (mulPinxBar + mulWT(y0))
-        x1Sum += x2
-        y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
-        y0 = y1
-    x2 = xBar - pStep * (mulPinxBar + mulWT(y0))
-    x1Sum += x2
-    x2 = x1Sum / kMax
-    return x1, x2, t, y1, gamma, gammaFFBS
+@dataclass
+class PNPD_parameters(NPD_parameters):
+    mulP_inv_grad_f_x1 = None
 
-def PNPD_step_no_momentum(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
-               mulWT: Callable, mulPIn: Callable, pStep: float, dStep: float,
-               PReg: float, t0: float, C: float, rho_i: float, kMax: int = 1):
-    # Primal Dual Iteration
-    #k = 0
-    mulPinx1 = mulPIn(PReg, gradf(x1))
-    x2 = x1 - pStep * (mulPinx1 + mulWT(y0))
-    y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
-    y0 = y1
-    x1Sum = np.zeros(x1.shape)
-    for k in range(1,kMax):
-        x2 = x1 - pStep * (mulPinx1 + mulWT(y0))
-        x1Sum += x2
-        y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
-        y0 = y1
-    x2 = x1 - pStep * (mulPinx1 + mulWT(y0))
-    x1Sum += x2
-    x2 = x1Sum / kMax
-    return x1, x2, None, y1, None, None
+@dataclass
+class PNPD_functions(NPD_functions):
+    mulP_inv: Callable[[np.ndarray], np.ndarray] = None
 
+class PNPD_prox_estimator(NPD_prox_estimator):
+    @classmethod
+    def common_computations(cls, x1: np.ndarray, parameters: PNPD_parameters, functions: PNPD_functions):
+        parameters.mulP_inv_grad_f_x1 = functions.mulP_inv(functions.grad_f(x1))
+        return parameters
+    
+    @classmethod
+    def primal_step(
+        cls,
+        x1: np.ndarray,
+        parameters: PNPD_parameters,
+        functions: PNPD_functions,
+    ):
+        x2 = x1 - parameters.alpha * (parameters.mulP_inv_grad_f_x1 + functions.mulWT(parameters.y1))
+        return x2
 
-def PNPD(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
-          mulWT: Callable, mulPIn: Callable, f: Callable,
-          pStep: float, dStep: float, PReg: float, xOrig, kMax: int = 1,
-          t0: float = 1, rho: Callable = lambda i: 1/(i+1)**1.1, tol: float = 1e-4, dp: float = 1, maxit: int = 100, momentum: bool = True, recIndexes = []):
-    """
-    Nested Primal Dual (FISTA-like algorithm)
-    Approximate argmin_{x \in R^d} f(x) + h(Wx) where f is differentiable and
-    the proximity operator of h* (Fenchel conjugate of h) is known.
-    """
-    dpReached = False
-    imRec = None
+def PNPD(x1: np.ndarray, parameters: PNPD_parameters, functions: PNPD_functions):
+    return generic_NPD(x1, parameters, functions, PNPD_prox_estimator.primal_dual_prox_estimator)
 
-    timeList = []
-    rreList = []
-    ssimList = []
-    gammaList = []
-    gammaFFBSList = []
-
-    recList = []
-
-    x1 = x0
-    y0 = np.zeros(proxhs(1, mulW(x0)).shape)
-
-    Step = PNPD_step if momentum else PNPD_step_no_momentum
-
-    C = 0
-    for i in range(maxit):
-        start = time.process_time()
-        x0, x1, t0, y0, gamma, gammaFFBS = Step(x0=x0, x1=x1, y0=y0, gradf=gradf, proxhs=proxhs,
-                                mulW=mulW, mulWT=mulWT, mulPIn=mulPIn, pStep=pStep,
-                                dStep=dStep, PReg=PReg, t0=t0, C=C, rho_i=rho(i),
-                                kMax=kMax)
-        elapsed = time.process_time() - start
-        if i == 0:
-            C = 10 * norm(x1 - x0)
-        rre = norm(xOrig - x1) / norm(xOrig)
-        rreList.append(rre)
-        timeList.append(elapsed)
-        ssimList.append(ssim(x1, xOrig, data_range=1))
-        gammaList.append(gamma)
-        gammaFFBSList.append(gammaFFBS)
-        print("Iteration: " + str(i), end="")
-        print(", RRE: " + str(rre), end="")
-        print(", SSIM: " + str(ssimList[-1]))
-        if f(x1) < dp*tol and not dpReached :
-            imRec = x1
-            dpStopIndex = i+1
-            dpReached = True
-        if (i+1) in recIndexes:
-            recList.append(x1)
-    if imRec is None:
-        imRec = x1
-        dpStopIndex = i+1
-    return x1, imRec, rreList, ssimList, timeList, gammaList, gammaFFBSList, dpStopIndex, recList
-
-def NPDIT_step(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
-          mulWT: Callable, mulPIn: Callable, mulP: Callable, f: Callable,
-          L: float, dStep: float, PReg: float, t0: float, C: float, rho_i: float, kMax: int, eps: float, dInv):
-    t = .5 + .5 * np.sqrt(1 + 4 * t0 * t0)
-    gammaFFBS = (t0 - 1) / t
-    gamma = min(gammaFFBS, C*rho_i / (norm(x1 - x0)))
-    xBar = x1 + gamma * (x1 - x0)
-    gradf_xBar = gradf(xBar)
-    # Primal Dual Iteration
-    #k = 0
-    while True:
-        pStep = eps / L
-        x2 = xBar - pStep * mulPIn(PReg, gradf_xBar + mulWT(y0))
-        y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
-        y0 = y1
-        x1Sum = np.zeros(x1.shape)
-        for k in range(1,kMax):
-            x2 = xBar - pStep * mulPIn(PReg, gradf_xBar + mulWT(y0))
-            x1Sum += x2
-            y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
-            y0 = y1
-        x2 = xBar - pStep * mulPIn(PReg, gradf_xBar + mulWT(y0))
-        x1Sum += x2
-        x2 = x1Sum / kMax
-        x2MinusXBar = x2 - xBar
-        if f(x2) <= f(xBar) + scalar_product(gradf_xBar, x2MinusXBar) + L / 2 * scalar_product(x2MinusXBar, mulP(PReg, x2MinusXBar)):
-            break
-        L *= dInv
-    return x1, x2, t, y1, L, gamma, gammaFFBS
-
-def NPDIT_step_no_momentum(x0, x1, y0, gradf: Callable, proxhs: Callable, mulW: Callable,
-          mulWT: Callable, mulPIn: Callable, mulP: Callable, f: Callable,
-          L: float, dStep: float, PReg: float, t0: float, C: float, rho_i: float, kMax: int, eps: float, dInv):
-    # Primal Dual Iteration
-    #k = 0
-    gradf_x1 = gradf(x1)
-    while True:
-        pStep = eps / L
-        x2 = x1 - pStep * mulPIn(PReg, gradf_x1 + mulWT(y0))
-        y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
-        y0 = y1
-        x1Sum = np.zeros(x1.shape)
-        for k in range(1,kMax):
-            x2 = x1 - pStep * mulPIn(PReg, gradf_x1 + mulWT(y0))
-            x1Sum += x2
-            y1 = proxhs(dStep / pStep, y0 + (dStep / pStep) * mulW(x2))
-            y0 = y1
-        x2 = x1 - pStep * mulPIn(PReg, gradf_x1 + mulWT(y0))
-        x1Sum += x2
-        x2 = x1Sum / kMax
-        x2MinusX1 = x2 - x1
-        if f(x2) <= f(x1) + scalar_product(gradf_x1, x2MinusX1) + L / 2 * scalar_product(x2MinusX1, mulP(PReg, x2MinusX1)):
-            break
-        L *= dInv
-    return x1, x2, None, y1, L, 0, 0
-
-def NPDIT(x0, gradf: Callable, proxhs: Callable, mulW: Callable,
-          mulWT: Callable, mulPIn: Callable, mulP: Callable, f: Callable,
-          L: float, normWsqrd: float, PReg: float, xOrig, kMax: int = 1,
-          t0: float = 1, eps: float = 0.99, dInv = 2,
-          rho: Callable = lambda i: 1/(i+1)**1.1, tol: float = 1e-4,
-          dp: float = 1, maxit: int = 100, momentum: bool = True, recIndexes = []):
-    """
-    Nested Primal Dual (FISTA-like algorithm)
-    Approximate argmin_{x \in R^d} f(x) + h(Wx) where f is differentiable and
-    the proximity operator of h* (Fenchel conjugate of h) is known.
-    """
-    dpReached = False
-    imRec = None
-
-    timeList = []
-    rreList = []
-    ssimList = []
-    gammaList = []
-    gammaFFBSList = []
-
-    recList = []
-
-    x1 = x0
-    y0 = np.zeros(proxhs(1, mulW(x0)).shape)
-    dStep = eps * PReg / normWsqrd
-
-    Step = NPDIT_step if momentum else NPDIT_step_no_momentum
-
-    C = 0
-    for i in range(maxit):
-        start = time.process_time()
-        x0, x1, t0, y0, L, gamma, gammaFFBS = Step(x0=x0, x1=x1, y0=y0, gradf=gradf, proxhs=proxhs,
-                                mulW=mulW, mulWT=mulWT, mulPIn=mulPIn, mulP=mulP, f=f, L=L,
-                                dStep=dStep, PReg=PReg, t0=t0, C=C, rho_i=rho(i),
-                                kMax=kMax, eps=eps, dInv=dInv)
-        elapsed = time.process_time() - start
-        if i == 0:
-            C = 10 * norm(x1 - x0)
-        rre = norm(xOrig - x1) / norm(xOrig)
-        rreList.append(rre)
-        timeList.append(elapsed)
-        ssimList.append(ssim(x1, xOrig, data_range=1))
-        gammaList.append(gamma)
-        gammaFFBSList.append(gammaFFBS)
-        print("Iteration: " + str(i), end="")
-        print(", RRE: " + str(rre), end="")
-        print(", SSIM: " + str(ssimList[-1]), end="")
-        print(", pStep: " + str(eps / L))
-        if f(x1) < dp*tol and not dpReached :
-            imRec = x1
-            dpStopIndex = i+1
-            dpReached = True
-        if (i+1) in recIndexes:
-            recList.append(x1)
-            
-    if imRec is None:
-        imRec = x1
-        dpStopIndex = i+1
-    return x1, imRec, rreList, ssimList, timeList, gammaList, gammaFFBSList, dpStopIndex, recList
+class NPDIT_prox_estimator(NPD_prox_estimator):
+    @classmethod
+    def primal_step(
+        cls,
+        x1: np.ndarray,
+        parameters: PNPD_parameters,
+        functions: PNPD_functions,
+    ):
+        x2 = x1 - parameters.alpha * functions.mulP_inv(parameters.grad_f_x1 + functions.mulWT(parameters.y1))
+        return x2

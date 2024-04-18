@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 from numpy.fft import fft2, ifft2
+from numpy.polynomial import Polynomial
 
 
 def scalar_product(x: np.array, y: np.array = None):
@@ -35,11 +36,11 @@ def gradient_convolution_least_squares(x, bFFT, psfFFT, psfFFTC, axes = (0, 1)):
     xFFT = fft2(x, axes=axes)
     return np.real(ifft2(psfFFTC * (psfFFT * xFFT - bFFT), axes=axes))    
 
-def multiply_P_inverse(mu, x, psfAbsSq, axes = (0, 1)):
-    return np.real(ifft2(fft2(x, axes=axes) / (psfAbsSq + mu), axes=axes))
+def multiply_P_inverse(p: Polynomial, x, psfAbsSq, axes = (0, 1)):
+    return np.real(ifft2(fft2(x, axes=axes) / p(psfAbsSq), axes=axes))
 
-def multiply_P(mu, x, psfAbsSq, axes = (0, 1)):
-    return np.real(ifft2(fft2(x, axes=axes) * (psfAbsSq + mu), axes=axes))
+def multiply_P(p: Polynomial, x, psfAbsSq, axes = (0, 1)):
+    return np.real(ifft2(fft2(x, axes=axes) * p(psfAbsSq), axes=axes))
 
 def gradient_2D_signal(m: np.array):
     dx = np.roll(m, -1, axis=-2) - m
