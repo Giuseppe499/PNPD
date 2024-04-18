@@ -139,7 +139,6 @@ def initialize_metrics_dict(x1, metrics_functions, ground_truth):
     return metrics_results
 
 def update_metrics_dict(metrics_results, new_metrics_results):
-    metrics_results["time"].append(new_metrics_results["time"])
     for key, value in new_metrics_results.items():
             metrics_results[key].append(value)
 
