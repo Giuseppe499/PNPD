@@ -307,7 +307,7 @@ def NPD_step(
     parameters.t0 = t1
     extrapolatedPoint = computeExtraPoint(x1, parameters.x0, gamma)
     parameters.x0 = x1
-    return NPD_no_extrapolation_step(extrapolatedPoint, parameters, functions, descent_step = gradient_descent_step)[0], parameters
+    return NPD_no_extrapolation_step(extrapolatedPoint, parameters, functions, descent_step = descent_step)[0], parameters
 
 def gammaNPD(t0: float, C: float, rho_i: float, xDiffNorm: float):
     """Compute the gamma and t1 for the Nested Primal-Dual algorithm."""
