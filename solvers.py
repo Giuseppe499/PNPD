@@ -157,13 +157,19 @@ def info_string_from_metrics(new_metrics_results):
         info += f"{key}: {value}, "
     return info
 
-def FBS_step(
+def gradient_descent_step(
     x1: np.ndarray, parameters: FBS_parameters, functions: FBS_functions
 ):
-    return functions.prox_g(
-        parameters.alpha, x1 - parameters.alpha * functions.grad_f(x1)
-    )
+    """Gradient descent step."""
+    return x1 - parameters.alpha * functions.grad_f(x1)
 
+def FBS_step(
+    x1: np.ndarray, parameters: FBS_parameters, functions: FBS_functions, descent_step: Callable = gradient_descent_step
+):
+    """Forward-Backward Splitting step."""
+    return functions.prox_g(
+        parameters.alpha, descent_step(x1, parameters, functions)
+    )
 
 @dataclass
 class FFBS_parameters(FBS_parameters):
@@ -233,10 +239,10 @@ class NPD_functions(FBS_functions):
     rho: Callable[[int], float] = lambda i: 1 / (i + 1) ** 1.1
 
 def NPD_no_extrapolation_step(
-    x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions
-):
+    x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions, descent_step: Callable = gradient_descent_step):
+    """Nested Primal-Dual step without extrapolation."""
     parameters.rho_i = functions.rho(parameters.iteration)
-    return FBS_step(x1, parameters, functions), parameters
+    return FBS_step(x1, parameters, functions, descent_step), parameters
 
 class NPD_prox_estimator:
     """Class for the Nested Primal-Dual proximal estimator."""
@@ -245,33 +251,28 @@ class NPD_prox_estimator:
     def primal_dual_prox_estimator(
         cls,
         alpha: float,
-        x1: np.ndarray,
+        x: np.ndarray,
         parameters: NPD_parameters,
         functions: NPD_functions,
     ):
-        cls.common_computations(x1, parameters, functions)
-        x2, parameters = cls.primal_dual_step(x1, parameters, functions)
-        xSum = np.zeros(x1.shape)
+        """Nested Primal-Dual proximal estimator."""
+        x2, parameters = cls.primal_dual_step(x, parameters, functions)
+        xSum = np.zeros(x.shape)
         for k in range(1, parameters.kMax):
-            x2, parameters = cls.primal_dual_step(x1, parameters, functions)
+            x2, parameters = cls.primal_dual_step(x, parameters, functions)
             xSum += x2
-        x2 = cls.primal_step(x1, parameters, functions)
+        x2 = cls.primal_step(x, parameters, functions)
         xSum += x2
         return xSum / parameters.kMax, parameters
     
     @classmethod
-    def common_computations(cls, x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions):
-        parameters.grad_f_x1 = functions.grad_f(x1)
-        return parameters
-    
-    @classmethod
     def primal_step(
         cls,
-        x1: np.ndarray,
+        x: np.ndarray,
         parameters: NPD_parameters,
         functions: NPD_functions
     ):
-        x2 = x1 - parameters.alpha * (parameters.grad_f_x1 + functions.mulWT(parameters.y1))
+        x2 = x - parameters.alpha * functions.mulWT(parameters.y1)
         return x2
     
     @classmethod
@@ -288,45 +289,50 @@ class NPD_prox_estimator:
     @classmethod
     def primal_dual_step(
         cls,
-        x1: np.ndarray,
+        x: np.ndarray,
         parameters: NPD_parameters,
         functions: NPD_functions,
     ):
-        x2 = cls.primal_step(x1, parameters, functions)
+        x2 = cls.primal_step(x, parameters, functions)
         y2 = cls.dual_step(x2, parameters, functions)
         parameters.y1 = y2
         return x2, parameters
 
 
 def NPD_step(
-    x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions
+    x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions, descent_step: Callable = gradient_descent_step
 ):
+    """Nested Primal-Dual step."""
     gamma, t1 = gammaNPD(
         parameters.t0, parameters.C, parameters.rho_i, norm(x1 - parameters.x0)
     )
     parameters.t0 = t1
     extrapolatedPoint = computeExtraPoint(x1, parameters.x0, gamma)
     parameters.x0 = x1
-    return NPD_no_extrapolation_step(extrapolatedPoint, parameters, functions)[0], parameters
+    return NPD_no_extrapolation_step(extrapolatedPoint, parameters, functions, descent_step = gradient_descent_step)[0], parameters
 
 def gammaNPD(t0: float, C: float, rho_i: float, xDiffNorm: float):
+    """Compute the gamma and t1 for the Nested Primal-Dual algorithm."""
     gamma, t1 = gammaFFBS(t0)
     gamma = min(gamma, C * rho_i / xDiffNorm)
     return gamma, t1
 
 def NPD(x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions):
-    return generic_NPD(x1, parameters, functions, NPD_prox_estimator.primal_dual_prox_estimator)
+    """Nested Primal-Dual algorithm."""
+    return generic_NPD(x1, parameters, functions, NPD_prox_estimator.primal_dual_prox_estimator
+    )
 
-def generic_NPD(x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions, prox_estimator: Callable):
+def generic_NPD(x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions, prox_estimator: Callable, descent_step: Callable = gradient_descent_step):
+    """Generic implementation of the Nested Primal-Dual algorithm."""
     parameters.x0 = x1
     parameters.y1 = np.zeros(functions.mulW(x1).shape)
     functions.prox_g = lambda alpha, x: prox_estimator(
         alpha, x, parameters, functions
     )[0]
     if parameters.extrapolation:
-        step = NPD_step
+        step = lambda x1, par, fun: NPD_step(x1, par, fun, descent_step=descent_step)
     else:
-        step = NPD_no_extrapolation_step
+        step = lambda x1, par, fun: NPD_no_extrapolation_step(x1, par, fun, descent_step=descent_step)
 
     # First step: needed to compute C
     parameters.iteration = parameters.startIteration
@@ -339,41 +345,37 @@ def generic_NPD(x1: np.ndarray, parameters: NPD_parameters, functions: NPD_funct
 
 @dataclass
 class PNPD_parameters(NPD_parameters):
-    mulP_inv_grad_f_x1 = None
+    """Parameters for the Preconditioned Nested Primal-Dual algorithm."""
+    mulP_x = None
 
 @dataclass
 class PNPD_functions(NPD_functions):
+    """Functions for the Preconditioned Nested Primal-Dual algorithm."""
     mulP_inv: Callable[[np.ndarray], np.ndarray] = None
-
-class PNPD_prox_estimator(NPD_prox_estimator):
-    @classmethod
-    def common_computations(cls, x1: np.ndarray, parameters: PNPD_parameters, functions: PNPD_functions):
-        parameters.mulP_inv_grad_f_x1 = functions.mulP_inv(functions.grad_f(x1))
-        return parameters
     
-    @classmethod
-    def primal_step(
-        cls,
-        x1: np.ndarray,
-        parameters: PNPD_parameters,
-        functions: PNPD_functions,
-    ):
-        x2 = x1 - parameters.alpha * (parameters.mulP_inv_grad_f_x1 + functions.mulWT(parameters.y1))
-        return x2
+def preconditioned_gradient_descent_step(
+    x1: np.ndarray, parameters: PNPD_parameters, functions: PNPD_functions
+):
+    """Preconditioned gradient descent step."""
+    return x1 - parameters.alpha * functions.mulP_inv(functions.grad_f(x1))
 
 def PNPD(x1: np.ndarray, parameters: PNPD_parameters, functions: PNPD_functions):
-    return generic_NPD(x1, parameters, functions, PNPD_prox_estimator.primal_dual_prox_estimator)
+    """Preconditioned Nested Primal-Dual algorithm."""
+    return generic_NPD(x1, parameters, functions, NPD_prox_estimator.primal_dual_prox_estimator, preconditioned_gradient_descent_step)
 
 class NPDIT_prox_estimator(NPD_prox_estimator):
+    """Class for the Nested Primal-Dual Iterated Tikhonov proximal estimator."""
+
     @classmethod
     def primal_step(
         cls,
-        x1: np.ndarray,
+        x: np.ndarray,
         parameters: PNPD_parameters,
         functions: PNPD_functions,
     ):
-        x2 = x1 - parameters.alpha * functions.mulP_inv(parameters.grad_f_x1 + functions.mulWT(parameters.y1))
+        x2 = x - parameters.alpha * functions.mulP_inv(functions.mulWT(parameters.y1))
         return x2
 
 def NPDIT_no_backtracking(x1: np.ndarray, parameters: PNPD_parameters, functions: PNPD_functions):
-    return generic_NPD(x1, parameters, functions, NPDIT_prox_estimator.primal_dual_prox_estimator)
+    """Nested Primal-Dual Iterated Tikhonov step without backtracking."""
+    return generic_NPD(x1, parameters, functions, NPDIT_prox_estimator.primal_dual_prox_estimator, preconditioned_gradient_descent_step)
