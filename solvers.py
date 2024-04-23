@@ -54,6 +54,7 @@ def deblur_image_Thikonov_with_prediction(blurred_image, psf, predicted_image, a
 
 @dataclass
 class FBS_functions:
+    """Functions for the Forward-Backward Splitting algorithm."""
     grad_f: Callable[[np.ndarray], np.ndarray]
     prox_g: Callable[[float, np.ndarray], np.ndarray] = None
     metrics: dict[str, Callable[[np.ndarray, np.ndarray], float]] = None
@@ -61,6 +62,7 @@ class FBS_functions:
 
 @dataclass
 class FBS_parameters:
+    """Parameters for the Forward-Backward Splitting algorithm."""
     alpha: float
     maxIter: int
     verbose: bool = True
@@ -72,6 +74,7 @@ class FBS_parameters:
         self.iteration = None
 
 def FBS(x1: np.ndarray, parameters: FBS_parameters, functions: FBS_functions):
+    """Forward-Backward Splitting algorithm."""
     return genericFBS(x1, parameters, functions, FBS_step)
 
 def genericFBS(
@@ -82,6 +85,7 @@ def genericFBS(
         [np.ndarray, FBS_parameters, FBS_functions], tuple[np.ndarray, ...]
     ],
 ):
+    """Generic implementation of a Forward-Backward Splitting algorithm."""
     metrics_results = None
     metrics_flag = functions.metrics is not None
     if metrics_flag:
@@ -105,6 +109,7 @@ def genericFBS(
     return x1, metrics_results
 
 def metrics_decorator(step):
+    """Decorator to add metrics computation to the step of an iterative algorithm."""
     def wrapper(*args, **kwargs):
         metrics_functions = kwargs.get("metrics_functions", None)
         kwargs.pop("metrics_functions", None)
@@ -133,6 +138,7 @@ def image_metrics():
     }
 
 def initialize_metrics_dict(x1, metrics_functions, ground_truth):
+    """Initialize a dictionary of metrics results."""
     metrics_results = {}
     metrics_results["time"] = [0]
     for key, value in metrics_functions.items():
@@ -140,10 +146,12 @@ def initialize_metrics_dict(x1, metrics_functions, ground_truth):
     return metrics_results
 
 def update_metrics_dict(metrics_results, new_metrics_results):
+    """Update a dictionary of metrics results."""
     for key, value in new_metrics_results.items():
             metrics_results[key].append(value)
 
 def info_string_from_metrics(new_metrics_results):
+    """Return a string with the information from the metrics results."""
     info = ""
     for key, value in new_metrics_results.items():
         info += f"{key}: {value}, "
@@ -159,6 +167,7 @@ def FBS_step(
 
 @dataclass
 class FFBS_parameters(FBS_parameters):
+    """Parameters for the Fast Forward-Backward Splitting algorithm."""
     x0: np.ndarray = None
     t0: float = 1
 
@@ -169,12 +178,14 @@ class FFBS_parameters(FBS_parameters):
 
 
 def FFBS(x1: np.ndarray, parameters: FFBS_parameters, functions: FBS_functions):
+    """Fast Forward-Backward Splitting algorithm."""
     return genericFBS(x1, parameters, functions, FFBS_step)
 
 
 def FFBS_step(
     x1: np.ndarray, parameters: FFBS_parameters, functions: FBS_functions
 ):
+    """Fast Forward-Backward Splitting step."""
     gamma, t1 = gammaFFBS(parameters.t0)
     parameters.t0 = t1
     extrapolatedPoint = computeExtraPoint(x1, parameters.x0, gamma)
@@ -183,17 +194,20 @@ def FFBS_step(
 
 
 def gammaFFBS(t0: float):
+    """Compute the gamma and t1 for the Fast Forward-Backward Splitting algorithm."""
     t1 = 0.5 * (1 + np.sqrt(1 + 4 * t0 * t0))
     gamma = (t0 - 1) / t1
     return gamma, t1
 
 
 def computeExtraPoint(x1: np.ndarray, x0: np.ndarray, gamma: float):
+    """Compute an extrapolated point on the line between x0 and x1."""
     return x1 + gamma * (x1 - x0)
 
 
 @dataclass
 class NPD_parameters(FFBS_parameters):
+    """Parameters for the Nested Primal-Dual algorithm."""
     beta: float = None
     kMax: int = 1
     C: float = 1
@@ -212,6 +226,7 @@ class NPD_parameters(FFBS_parameters):
 
 @dataclass
 class NPD_functions(FBS_functions):
+    """Functions for the Nested Primal-Dual algorithm."""
     prox_h_star: Callable[[float, np.ndarray], np.ndarray] = None
     mulW: Callable[[np.ndarray], np.ndarray] = None
     mulWT: Callable[[np.ndarray], np.ndarray] = None
@@ -224,6 +239,8 @@ def NPD_no_extrapolation_step(
     return FBS_step(x1, parameters, functions), parameters
 
 class NPD_prox_estimator:
+    """Class for the Nested Primal-Dual proximal estimator."""
+
     @classmethod
     def primal_dual_prox_estimator(
         cls,
