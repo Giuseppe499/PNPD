@@ -74,33 +74,6 @@ class FBS_parameters:
 def FBS(x1: np.ndarray, parameters: FBS_parameters, functions: FBS_functions):
     return genericFBS(x1, parameters, functions, FBS_step)
 
-def metrics_decorator(generic_FBS):
-    def wrapper(*args, **kwargs):
-        metrics_functions = kwargs.get("metrics_functions", None)
-        kwargs.pop("metrics_functions", None)
-        ground_truth = kwargs.get("ground_truth", None)
-        kwargs.pop("ground_truth", None)
-
-        # Time the function
-        start = time.process_time()
-        result = generic_FBS(*args, **kwargs)
-        elapsed = time.process_time() - start
-
-        # Compute metrics
-        metrics_results = {}
-        metrics_results["time"] = elapsed
-        for key, value in metrics_functions.items():
-            metrics_results[key] = value(result[0], ground_truth=ground_truth)
-
-        return result, metrics_results
-    return wrapper
-
-def image_metrics():
-    return {
-        "SSIM": lambda x, ground_truth: ssim(x, ground_truth, data_range=1),
-        "RRE": lambda x, ground_truth: norm(x - ground_truth) / norm(ground_truth),
-    }
-
 def genericFBS(
     x1: np.ndarray,
     parameters: FBS_parameters,
@@ -130,6 +103,34 @@ def genericFBS(
             x1 = tmp[0]
 
     return x1, metrics_results
+
+def metrics_decorator(step):
+    def wrapper(*args, **kwargs):
+        metrics_functions = kwargs.get("metrics_functions", None)
+        kwargs.pop("metrics_functions", None)
+        ground_truth = kwargs.get("ground_truth", None)
+        kwargs.pop("ground_truth", None)
+
+        # Time the function
+        start = time.process_time()
+        result = step(*args, **kwargs)
+        elapsed = time.process_time() - start
+
+        # Compute metrics
+        metrics_results = {}
+        metrics_results["time"] = elapsed
+        for key, value in metrics_functions.items():
+            metrics_results[key] = value(result[0], ground_truth=ground_truth)
+
+        return result, metrics_results
+    return wrapper
+
+def image_metrics():
+    """Return a dictionary of image metrics functions."""
+    return {
+        "SSIM": lambda x, ground_truth: ssim(x, ground_truth, data_range=1),
+        "RRE": lambda x, ground_truth: norm(x - ground_truth) / norm(ground_truth),
+    }
 
 def initialize_metrics_dict(x1, metrics_functions, ground_truth):
     metrics_results = {}
