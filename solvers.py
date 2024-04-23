@@ -217,7 +217,6 @@ class NPD_parameters(FFBS_parameters):
     beta: float = None
     kMax: int = 1
     C: float = 1
-    rho_i: float = 1
     extrapolation: bool = True
     y1 = None
     grad_f_x1 = None
@@ -225,7 +224,6 @@ class NPD_parameters(FFBS_parameters):
     def reset(self):
         super().reset()
         self.C = 1
-        self.rho_i = 1
         self.y1 = None
         self.grad_f_x1 = None
 
@@ -241,7 +239,6 @@ class NPD_functions(FBS_functions):
 def NPD_no_extrapolation_step(
     x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions, descent_step: Callable = gradient_descent_step):
     """Nested Primal-Dual step without extrapolation."""
-    parameters.rho_i = functions.rho(parameters.iteration)
     return FBS_step(x1, parameters, functions, descent_step), parameters
 
 class NPD_prox_estimator:
@@ -303,8 +300,9 @@ def NPD_step(
     x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions, descent_step: Callable = gradient_descent_step
 ):
     """Nested Primal-Dual step."""
+    rho_i = functions.rho(parameters.iteration)
     gamma, t1 = gammaNPD(
-        parameters.t0, parameters.C, parameters.rho_i, norm(x1 - parameters.x0)
+        parameters.t0, parameters.C, rho_i, norm(x1 - parameters.x0)
     )
     parameters.t0 = t1
     extrapolatedPoint = computeExtraPoint(x1, parameters.x0, gamma)
