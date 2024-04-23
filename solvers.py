@@ -319,8 +319,7 @@ def gammaNPD(t0: float, C: float, rho_i: float, xDiffNorm: float):
 
 def NPD(x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions):
     """Nested Primal-Dual algorithm."""
-    return generic_NPD(x1, parameters, functions, NPD_prox_estimator.primal_dual_prox_estimator
-    )
+    return generic_NPD(x1, parameters, functions, NPD_prox_estimator.primal_dual_prox_estimator)
 
 def generic_NPD(x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions, prox_estimator: Callable, descent_step: Callable = gradient_descent_step):
     """Generic implementation of the Nested Primal-Dual algorithm."""
