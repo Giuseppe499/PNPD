@@ -331,14 +331,29 @@ def generic_NPD(x1: np.ndarray, parameters: NPD_parameters, functions: NPD_funct
     else:
         step = lambda x1, par, fun: NPD_no_extrapolation_step(x1, par, fun, descent_step=descent_step)
 
+    metrics_flag = functions.metrics is not None
+    if metrics_flag:
+        zero_step_metrics_results = initialize_metrics_dict(x1, functions.metrics, parameters.ground_truth)
+        
+
     # First step: needed to compute C
     parameters.iteration = parameters.startIteration
+    start = time.process_time()
     x1 = step(x1, parameters, functions)[0]
+    elapsed = time.process_time() - start
+
     parameters.C = 10 * norm(x1 - parameters.x0)
     parameters.startIteration += 1
-    result = genericFBS(x1, parameters, functions, step)
+    x1, metrics_results = genericFBS(x1, parameters, functions, step)
     parameters.startIteration -= 1
-    return result
+
+    if metrics_flag:
+        for key in metrics_results.keys():
+            metrics_results[key].insert(0, zero_step_metrics_results[key][0])
+        metrics_results["time"][1]=elapsed
+
+    
+    return x1, metrics_results
 
 @dataclass
 class PNPD_parameters(NPD_parameters):
