@@ -81,6 +81,8 @@ if __name__ == "__main__":
     else:
         IMGPATH = "peppers.tiff"
 
+    np.random.seed(42)
+
     image = Image.open(IMGPATH)
     image = np.asarray(image) / 255
     image = image[::2, ::2]
