@@ -38,7 +38,7 @@ with np.load(f"./npz/Blurred.npz") as data:
     image = data["image"]
     noiseNormSqd = data["noiseNormSqd"]
 
-parameters = PNPD_parameters(maxIter=150, alpha=.99, beta=.99 / 8, kMax=1, extrapolation=True, ground_truth=image.copy())
+parameters = PNPD_parameters(maxIter=150, alpha=.99, beta=.99 / 8, kMax=1, extrapolation=True, ground_truth=image)
 
 lam = 1e-3  # TV regularization parameter
 
