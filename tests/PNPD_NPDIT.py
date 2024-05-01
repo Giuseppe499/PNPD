@@ -1,5 +1,5 @@
 """
-NPD implementation
+PNPD implementation
 
 Copyright (C) 2023 Giuseppe Scarlato
 
