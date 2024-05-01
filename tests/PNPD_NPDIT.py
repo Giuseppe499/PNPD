@@ -53,29 +53,44 @@ functions = PNPD_functions(
     mulW=gradient_2D_signal,
     mulWT=divergence_2D_signal,
     mulP_inv= lambda x: multiply_P_inverse(p=preconditioner_polynomial, x=x, psfAbsSq=psfAbsSq),
-    metrics=image_metrics()
+    metrics=metrics
 )
 
-print("PNPD")
-imRec, metrics_results = PNPD(x1=b, parameters=parameters, functions=functions)
+imRec = {}
+metrics_results = {}
+
+method = "PNPD"
+print(method)
+im_rec_tmp, metrics_results_tmp = PNPD(x1=b, parameters=parameters, functions=functions)
+imRec[method] = im_rec_tmp
+metrics_results[method] = metrics_results_tmp
 print("\n\n\n\n")
 
+method = "NPD"
 parameters.reset()
 lam = 1e-4
 functions.prox_h_star = lambda alpha, x: prox_h_star_TV(lam, x)
 
-print("NPD")
-imrecNPD, metrics_resultsNPD = NPD(x1=b, parameters=parameters, functions=functions)
+print(method)
+im_rec_tmp, metrics_results_tmp = NPD(x1=b, parameters=parameters, functions=functions)
+imRec[method] = im_rec_tmp
+metrics_results[method] = metrics_results_tmp
+print("\n\n\n\n")
 
+method = "NPDIT"
 parameters.reset()
 parameters.beta *= nu
 
-print("NPDIT")
-imRecNPDIT, metrics_resultsNPDIT = NPDIT_no_backtracking(x1=b, parameters=parameters, functions=functions)
+print(method)
+im_rec_tmp, metrics_results_tmp = NPDIT_no_backtracking(x1=b, parameters=parameters, functions=functions)
+imRec[method] = im_rec_tmp
+metrics_results[method] = metrics_results_tmp
+print("\n\n\n\n")
 
 
-Plot = True
-if Plot:
+PLOT = True
+PLOT_RECONSTRUCTION = False
+if PLOT:
     import matplotlib.pyplot as plt
 
     with np.load(f"./npz/Blurred.npz") as data:
@@ -87,16 +102,33 @@ if Plot:
 
     cmap = "gray" if not RGB else None
 
-    metrics_results.pop("time")
-    
-    for key in metrics_results.keys():
-        value_PNPD = metrics_results[key]
-        value_NPDIT = metrics_resultsNPDIT[key]
-        value_NPD = metrics_resultsNPD[key]
+    # Results vs iterations
+    for key in metrics.keys():
         plt.figure()
-        plt.plot(value_NPD, label="NPD")
-        plt.plot(value_PNPD, label="PNPD")
-        plt.plot(value_NPDIT, label="NPDIT")        
+        for method in imRec.keys():
+            plt.plot(metrics_results[method][key], label=method)
         plt.legend()
-        plt.title(key)
+        plt.title(key + " vs iterations")
+
+    # Change time from relative to absolute
+    from plotExtras import relTimetoAbsTime
+    for method in imRec.keys():
+        metrics_results[method]["time"] = relTimetoAbsTime(metrics_results[method]["time"])
+
+    # Results vs time
+    for key in metrics.keys():
+        plt.figure()
+        for method in imRec.keys():
+            plt.plot(metrics_results[method]["time"], metrics_results[method][key], label=method)
+        plt.legend()
+        plt.title(key + " vs time")
+
+    
+    
+    if PLOT_RECONSTRUCTION:
+        for method in imRec.keys():
+            plt.figure()
+            plt.imshow(imRec[method], cmap=cmap)
+            plt.title(method)
+
     plt.show()

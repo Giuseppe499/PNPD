@@ -14,11 +14,10 @@ def savePath(filename, directory="./Plots/"):
         return os.path.join(directory, filename)
 
 def relTimetoAbsTime(timeList):
-    absTimeList = np.zeros(len(timeList)+1)
-    absTimeList[0] = 0
-    absTimeList[1] = timeList[0]
+    absTimeList = np.zeros(len(timeList))
+    absTimeList[0] = timeList[0]
     for i in range(1, len(timeList)):
-        absTimeList[i+1] = absTimeList[i] + timeList[i]
+        absTimeList[i] = absTimeList[i-1] + timeList[i]
     return absTimeList
 
 def addIt0(list, value):
