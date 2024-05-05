@@ -241,18 +241,19 @@ def NPD_no_extrapolation_step(
     """Nested Primal-Dual step without extrapolation."""
     return FBS_step(x1, parameters, functions, descent_step), parameters
 
-def NPD_step(
-    x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions, descent_step: Callable = gradient_descent_step
-):
-    """Nested Primal-Dual step."""
-    rho_i = functions.rho(parameters.iteration)
-    gamma, t1 = gammaNPD(
-        parameters.t0, parameters.C, rho_i, norm(x1 - parameters.x0)
-    )
-    parameters.t0 = t1
-    extrapolatedPoint = computeExtraPoint(x1, parameters.x0, gamma)
-    parameters.x0 = x1
-    return NPD_no_extrapolation_step(extrapolatedPoint, parameters, functions, descent_step = descent_step)[0], parameters
+def NPD_extrapolation_decorator(step: Callable):
+    def step_with_extrapolation(x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions, *args, **kwargs):
+        rho_i = functions.rho(parameters.iteration)
+        gamma, t1 = gammaNPD(
+            parameters.t0, parameters.C, rho_i, norm(x1 - parameters.x0)
+        )
+        parameters.t0 = t1
+        extrapolatedPoint = computeExtraPoint(x1, parameters.x0, gamma)
+        parameters.x0 = x1
+        return step(extrapolatedPoint, parameters, functions, *args, **kwargs)[0], parameters
+    return step_with_extrapolation
+
+NPD_step = NPD_extrapolation_decorator(NPD_no_extrapolation_step)
 
 def gammaNPD(t0: float, C: float, rho_i: float, xDiffNorm: float):
     """Compute the gamma and t1 for the Nested Primal-Dual algorithm."""
