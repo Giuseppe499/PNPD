@@ -77,7 +77,7 @@ imRec[method] = im_rec_tmp
 metrics_results[method] = metrics_results_tmp
 print("\n\n\n\n")
 
-method = "NPDIT"
+method = "NPDIT no backtracking"
 parameters.reset()
 parameters.beta *= nu
 
