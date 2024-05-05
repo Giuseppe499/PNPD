@@ -111,9 +111,9 @@ if PLOT:
         plt.title(key + " vs iterations")
 
     # Change time from relative to absolute
-    from plotExtras import relTimetoAbsTime
+    from plotExtras import relative_time_to_absolute
     for method in imRec.keys():
-        metrics_results[method]["time"] = relTimetoAbsTime(metrics_results[method]["time"])
+        metrics_results[method]["time"] = relative_time_to_absolute(metrics_results[method]["time"])
 
     # Results vs time
     for key in metrics.keys():

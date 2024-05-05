@@ -28,24 +28,18 @@ matplotlib.rcParams['font.family'] = 'STIXGeneral'
 props = dict(boxstyle='square', fc="white", ec="black" , alpha=0.5)
 boxPos = (0.95, 0.98)
 
-def savePath(filename, directory="./Plots/"):
+def generate_save_path(filename, directory="./Plots/"):
         os.makedirs(directory, exist_ok=True)
         return os.path.join(directory, filename)
 
-def relTimetoAbsTime(timeList):
+def relative_time_to_absolute(timeList):
     absTimeList = np.zeros(len(timeList))
     absTimeList[0] = timeList[0]
     for i in range(1, len(timeList)):
         absTimeList[i] = absTimeList[i-1] + timeList[i]
     return absTimeList
 
-def addIt0(list, value):
-    newList = np.zeros(len(list)+1)
-    newList[0] = value
-    newList[1:] = list
-    return newList
-
-def plotLists(Y, X = None, stopIndices = None, labels = None, labelsStop = None, title = None, xlabel = None, ylabel = None, saveName = None, linestyle = None, semilogy = False):
+def plot_lists(Y, X = None, stopIndices = None, labels = None, labelsStop = None, title = None, xlabel = None, ylabel = None, saveName = None, linestyle = None, semilogy = False):
         plt.figure()
         if X is None:
             X = [np.arange(len(Y[i])) for i in range(len(Y))]
@@ -68,6 +62,6 @@ def plotLists(Y, X = None, stopIndices = None, labels = None, labelsStop = None,
         plt.ylabel(ylabel)
         plt.title(title)
         
-        os.makedirs(os.path.dirname(savePath(saveName)), exist_ok=True)
+        os.makedirs(os.path.dirname(generate_save_path(saveName)), exist_ok=True)
         if saveName is not None:
-            plt.savefig(savePath(saveName), bbox_inches='tight')
+            plt.savefig(generate_save_path(saveName), bbox_inches='tight')
