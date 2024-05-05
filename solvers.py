@@ -241,6 +241,25 @@ def NPD_no_extrapolation_step(
     """Nested Primal-Dual step without extrapolation."""
     return FBS_step(x1, parameters, functions, descent_step), parameters
 
+def NPD_step(
+    x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions, descent_step: Callable = gradient_descent_step
+):
+    """Nested Primal-Dual step."""
+    rho_i = functions.rho(parameters.iteration)
+    gamma, t1 = gammaNPD(
+        parameters.t0, parameters.C, rho_i, norm(x1 - parameters.x0)
+    )
+    parameters.t0 = t1
+    extrapolatedPoint = computeExtraPoint(x1, parameters.x0, gamma)
+    parameters.x0 = x1
+    return NPD_no_extrapolation_step(extrapolatedPoint, parameters, functions, descent_step = descent_step)[0], parameters
+
+def gammaNPD(t0: float, C: float, rho_i: float, xDiffNorm: float):
+    """Compute the gamma and t1 for the Nested Primal-Dual algorithm."""
+    gamma, t1 = gammaFFBS(t0)
+    gamma = min(gamma, C * rho_i / xDiffNorm)
+    return gamma, t1
+
 class NPD_prox_estimator:
     """Class for the Nested Primal-Dual proximal estimator."""
 
@@ -294,26 +313,6 @@ class NPD_prox_estimator:
         y2 = cls.dual_step(x2, parameters, functions)
         parameters.y1 = y2
         return x2, parameters
-
-
-def NPD_step(
-    x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions, descent_step: Callable = gradient_descent_step
-):
-    """Nested Primal-Dual step."""
-    rho_i = functions.rho(parameters.iteration)
-    gamma, t1 = gammaNPD(
-        parameters.t0, parameters.C, rho_i, norm(x1 - parameters.x0)
-    )
-    parameters.t0 = t1
-    extrapolatedPoint = computeExtraPoint(x1, parameters.x0, gamma)
-    parameters.x0 = x1
-    return NPD_no_extrapolation_step(extrapolatedPoint, parameters, functions, descent_step = descent_step)[0], parameters
-
-def gammaNPD(t0: float, C: float, rho_i: float, xDiffNorm: float):
-    """Compute the gamma and t1 for the Nested Primal-Dual algorithm."""
-    gamma, t1 = gammaFFBS(t0)
-    gamma = min(gamma, C * rho_i / xDiffNorm)
-    return gamma, t1
 
 def NPD(x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions):
     """Nested Primal-Dual algorithm."""
