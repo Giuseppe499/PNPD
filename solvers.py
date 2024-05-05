@@ -192,21 +192,21 @@ def FFBS_step(
     x1: np.ndarray, parameters: FFBS_parameters, functions: FBS_functions
 ):
     """Fast Forward-Backward Splitting step."""
-    gamma, t1 = gammaFFBS(parameters.t0)
+    gamma, t1 = gamma_FFBS(parameters.t0)
     parameters.t0 = t1
-    extrapolatedPoint = computeExtraPoint(x1, parameters.x0, gamma)
+    extrapolatedPoint = compute_extra_point(x1, parameters.x0, gamma)
     parameters.x0 = x1
     return FBS_step(extrapolatedPoint, parameters, functions), parameters
 
 
-def gammaFFBS(t0: float):
+def gamma_FFBS(t0: float):
     """Compute the gamma and t1 for the Fast Forward-Backward Splitting algorithm."""
     t1 = 0.5 * (1 + np.sqrt(1 + 4 * t0 * t0))
     gamma = (t0 - 1) / t1
     return gamma, t1
 
 
-def computeExtraPoint(x1: np.ndarray, x0: np.ndarray, gamma: float):
+def compute_extra_point(x1: np.ndarray, x0: np.ndarray, gamma: float):
     """Compute an extrapolated point on the line between x0 and x1."""
     return x1 + gamma * (x1 - x0)
 
@@ -244,20 +244,20 @@ def NPD_no_extrapolation_step(
 def NPD_extrapolation_decorator(step: Callable):
     def step_with_extrapolation(x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions):
         rho_i = functions.rho(parameters.iteration)
-        gamma, t1 = gammaNPD(
+        gamma, t1 = gamma_NPD(
             parameters.t0, parameters.C, rho_i, norm(x1 - parameters.x0)
         )
         parameters.t0 = t1
-        extrapolatedPoint = computeExtraPoint(x1, parameters.x0, gamma)
+        extrapolatedPoint = compute_extra_point(x1, parameters.x0, gamma)
         parameters.x0 = x1
         return step(extrapolatedPoint, parameters, functions)
     return step_with_extrapolation
 
 NPD_step = NPD_extrapolation_decorator(NPD_no_extrapolation_step)
 
-def gammaNPD(t0: float, C: float, rho_i: float, xDiffNorm: float):
+def gamma_NPD(t0: float, C: float, rho_i: float, xDiffNorm: float):
     """Compute the gamma and t1 for the Nested Primal-Dual algorithm."""
-    gamma, t1 = gammaFFBS(t0)
+    gamma, t1 = gamma_FFBS(t0)
     gamma = min(gamma, C * rho_i / xDiffNorm)
     return gamma, t1
 
