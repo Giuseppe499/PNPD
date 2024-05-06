@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from PIL import Image
 import numpy as np
 from numpy.fft import fft2
-from mathExtras import convolve_2D_fft, generate_gaussian_PSF, generate_out_of_focus_PSF, scalar_product
+from math_extras import convolve_2D_fft, generate_gaussian_PSF, generate_out_of_focus_PSF, scalar_product
 import os
 
 
