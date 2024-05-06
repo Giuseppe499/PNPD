@@ -395,3 +395,30 @@ NPDIT_no_extrapolation_step = PNPD_no_extrapolation_step
 def NPDIT_no_backtracking(x1: np.ndarray, parameters: PNPD_parameters, functions: PNPD_functions):
     """Nested Primal-Dual Iterated Tikhonov step without backtracking."""
     return generic_NPD(x1, parameters, functions, NPDIT_prox_estimator.primal_dual_prox_estimator, NPDIT_no_extrapolation_step)
+
+@dataclass
+class NPDIT_parameters(PNPD_parameters):
+    eps = .99
+    delta = .5
+    L = .1
+
+@dataclass
+class NPDIT_functions(PNPD_functions):
+    f: Callable[[np.ndarray], np.ndarray] = None
+    mulP: Callable[[np.ndarray], np.ndarray] = None
+
+def NPDIT_step(x1: np.ndarray, parameters: NPDIT_parameters, functions: NPDIT_functions):
+    grad_f_x1 = functions.grad_f(x1)
+    while True:
+        parameters.alpha = parameters.eps / parameters.L
+        x2, parameters = NPDIT_no_extrapolation_step(x1, parameters, functions)        
+        x2_minus_x1 = x2 - x1
+        f = functions.f
+        if f(x2) <= f(x1) + scalar_product(grad_f_x1, x2_minus_x1) + parameters.L/2 * scalar_product(x2_minus_x1, functions.mulP(x2_minus_x1)):
+            break
+        parameters.L /= parameters.delta
+    return x2, parameters
+
+def NPDIT(x1: np.ndarray, parameters: PNPD_parameters, functions: PNPD_functions):
+    """Nested Primal-Dual Iterated Tikhonov step without backtracking."""
+    return generic_NPD(x1, parameters, functions, NPDIT_prox_estimator.primal_dual_prox_estimator, NPDIT_step)
