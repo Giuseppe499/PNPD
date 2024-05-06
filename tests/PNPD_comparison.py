@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import numpy as np
-from mathExtras import (
+from math_extras import (
     gradient_convolution_least_squares,
     gradient_2D_signal,
     divergence_2D_signal,
@@ -124,7 +124,7 @@ if PLOT:
         plt.title(key + " vs iterations")
 
     # Change time from relative to absolute
-    from plotExtras import relative_time_to_absolute
+    from tests.plot_extras import relative_time_to_absolute
     for method in imRec.keys():
         metrics_results[method]["time"] = relative_time_to_absolute(metrics_results[method]["time"])
 
