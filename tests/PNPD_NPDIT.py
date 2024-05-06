@@ -24,8 +24,11 @@ from mathExtras import (
     divergence_2D_signal,
     prox_h_star_TV,
     multiply_P_inverse,
+    multiply_P,
+    scalar_product,
+    convolve_2D_fft
 )
-from solvers import PNPD, NPD, NPDIT_no_backtracking, PNPD_parameters, PNPD_functions, image_metrics
+from solvers import PNPD, NPD, NPDIT, NPDIT_no_backtracking, NPDIT_parameters, NPDIT_functions, image_metrics
 
 # Load data (generated with generateBlurredImage.py)
 with np.load(f"./npz/Blurred.npz") as data:
@@ -38,7 +41,7 @@ with np.load(f"./npz/Blurred.npz") as data:
     image = data["image"]
     noiseNormSqd = data["noiseNormSqd"]
 
-parameters = PNPD_parameters(maxIter=150, alpha=.99, beta=.99 / 8, kMax=1, extrapolation=True, ground_truth=image)
+parameters = NPDIT_parameters(maxIter=150, alpha=.99, beta=.99 / 8, kMax=1, extrapolation=True, ground_truth=image)
 
 lam = 1e-3  # TV regularization parameter
 
@@ -47,12 +50,14 @@ metrics = image_metrics()
 nu = 1e-1
 preconditioner_polynomial = np.polynomial.Polynomial([nu, 1])
 
-functions = PNPD_functions(
+functions = NPDIT_functions(
+    f=lambda x: scalar_product(convolve_2D_fft(x, psf) - b),
     grad_f=lambda x: gradient_convolution_least_squares(x, bFFT, psfFFT, psfFFTC),
     prox_h_star=lambda alpha, x: prox_h_star_TV(lam, x),
     mulW=gradient_2D_signal,
     mulWT=divergence_2D_signal,
     mulP_inv= lambda x: multiply_P_inverse(p=preconditioner_polynomial, x=x, psfAbsSq=psfAbsSq),
+    mulP = lambda x: multiply_P(p=preconditioner_polynomial, x=x, psfAbsSq=psfAbsSq),
     metrics=metrics
 )
 
@@ -87,6 +92,14 @@ imRec[method] = im_rec_tmp
 metrics_results[method] = metrics_results_tmp
 print("\n\n\n\n")
 
+method = "NPDIT"
+parameters.reset()
+
+print(method)
+im_rec_tmp, metrics_results_tmp = NPDIT(x1=b, parameters=parameters, functions=functions)
+imRec[method] = im_rec_tmp
+metrics_results[method] = metrics_results_tmp
+print("\n\n\n\n")
 
 PLOT = True
 PLOT_RECONSTRUCTION = False
