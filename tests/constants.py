@@ -1,0 +1,2 @@
+NUMPY_ZIP_SAVE_FOLDER = "./npz"
+PLOTS_SAVE_FOLDER = "../plots"
