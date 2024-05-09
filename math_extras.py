@@ -124,6 +124,12 @@ def generate_out_of_focus_PSF(size: int, radius: int) -> np.array:
 
     return psfMatrix
 
+def move_psf_center(psf: np.ndarray, new_center: np.ndarray = np.asarray((0,0)), old_center: np.ndarray = None):
+    psf_shape = np.asarray(psf.shape)
+    if old_center is None:
+        old_center = psf_shape//2
+    return np.roll(psf, new_center-old_center, axis=(0, 1))
+
 def center_crop(image, target_size: tuple[int, int]):
     h = image.shape[0]
     w = image.shape[1]
