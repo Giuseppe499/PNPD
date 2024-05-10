@@ -21,65 +21,59 @@ from PIL import Image
 import numpy as np
 from numpy.fft import fft2
 from math_extras import convolve_2D_fft, generate_gaussian_PSF, generate_out_of_focus_PSF, scalar_product
-import os
+from dataclasses import dataclass
+from utilities import save_data
 
+@dataclass
+class DeblurProblemData:
+    image: np.ndarray = None
+    convolved: np.ndarray = None
+    noise: np.ndarray = None
+    blurred: np.ndarray = None
+    bFFT: np.ndarray = None
+    psf: np.ndarray = None
+    psfFFT: np.ndarray = None
+    psfFFTC: np.ndarray = None
+    psfAbsSq: np.ndarray = None
+    image: np.ndarray = None
+    noiseNormSqd: float = None
 
-def generateBlurredImage(image, noisePercent, psf, savePath=None):
+def generate_blurred_image(image, noisePercent, psf, save_path=None) -> DeblurProblemData:
+    data = DeblurProblemData()
+    data.image = image
+    data.psf = psf
+
     # Generate blurred image
-    conv = convolve_2D_fft(image, psf)
+    data.convolved = convolve_2D_fft(image, psf)
 
     # Generate noise
-    noise = np.random.normal(size=image.shape)
-    noise *= noisePercent * np.linalg.norm(conv) / np.linalg.norm(noise)
-    noiseNormSqd = scalar_product(noise.ravel())
+    data.noise = np.random.normal(size=image.shape)
+    data.noise *= noisePercent * np.linalg.norm(data.convolved) / np.linalg.norm(data.noise)
+    data.noiseNormSqd = scalar_product(data.noise.ravel())
 
     # Add noise to blurred image
-    b = np.clip(conv + noise, 0, 1)
+    data.blurred = np.clip(data.convolved + data.noise, 0, 1)
 
     # Generate FFTs
-    bFFT = fft2(b)
-    psfFFT = fft2(psf)
-    psfFFTC = np.conjugate(psfFFT)
-    psfAbsSq = psfFFTC * psfFFT
+    data.bFFT = fft2(data.blurred)
+    data.psfFFT = fft2(data.psf)
+    data.psfFFTC = np.conjugate(data.psfFFT)
+    data.psfAbsSq = data.psfFFTC * data.psfFFT
 
     # Save data
-    if savePath is not None:
-        os.makedirs(os.path.dirname(savePath), exist_ok=True)
-        np.savez(
-            savePath,
-            conv=conv,
-            noise=noise,
-            b=b,
-            bFFT=bFFT,
-            psf=psf,
-            psfFFT=psfFFT,
-            psfFFTC=psfFFTC,
-            psfAbsSq=psfAbsSq,
-            image=image,
-            noiseNormSqd=noiseNormSqd,
-        )
+    if save_path is not None:
+        save_data(save_path, data)
 
-    return (
-        conv,
-        noise,
-        b,
-        bFFT,
-        psf,
-        psfFFT,
-        psfFFTC,
-        psfAbsSq,
-        image,
-        noiseNormSqd,
-    )
+    return data
 
-
+# Usage example
 if __name__ == "__main__":
     RGB = False
 
     if not RGB:
-        IMGPATH = "cameraman.tif"
+        IMGPATH = "./images/cameraman.tif"
     else:
-        IMGPATH = "peppers.tiff"
+        IMGPATH = "./images/peppers.tiff"
 
     np.random.seed(42)
 
@@ -107,9 +101,9 @@ if __name__ == "__main__":
         axis=(0, 1),
     )
 
-    blurred = generateBlurredImage(
-        image, noisePercent=0.01, psf=psf, savePath="./npz/Blurred.npz"
-    )[2]
+    blurred = generate_blurred_image(
+        image, noisePercent=0.01, psf=psf, save_path="./pickle/Blurred"
+    ).blurred
 
     plot = True
     if plot:
