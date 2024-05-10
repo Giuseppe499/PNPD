@@ -29,99 +29,127 @@ from math_extras import (
     convolve_2D_fft
 )
 from solvers import PNPD, NPD, NPDIT, NPDIT_no_backtracking, NPDIT_parameters, NPDIT_functions, image_metrics
+from tests.constants import *
+from tests.generate_blurred_image import DeblurProblemData
+from dataclasses import dataclass
+from utilities import save_data
+import matplotlib.pyplot as plt
+import os
 
-# Load data (generated with generateBlurredImage.py)
-with np.load(f"./npz/Blurred.npz") as data:
-    b = data["b"]
-    bFFT = data["bFFT"]
-    psf = data["psf"]
-    psfFFT = data["psfFFT"]
-    psfFFTC = data["psfFFTC"]
-    psfAbsSq = data["psfAbsSq"]
-    image = data["image"]
-    noiseNormSqd = data["noiseNormSqd"]
+TEST_NAME = "PNPD_comparison"
 
-parameters = NPDIT_parameters(maxIter=150, alpha=.99, beta=.99 / 8, kMax=1, extrapolation=True, ground_truth=image)
+@dataclass
+class Parameters:
+    nu: float
+    lam_PNPD: float
+    lam_NPD: float
+    iterations: int = 10
+    k_max: int = 1
 
-lam = 1e-3  # TV regularization parameter
+@dataclass
+class TestData:
+    im_rec: dict
+    metrics_results: dict
 
-metrics = image_metrics()
+def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):    
+    blurred = data.blurred
+    bFFT = data.bFFT
+    psf = data.psf
+    psfFFT = data.psfFFT
+    psfFFTC = data.psfFFTC
+    psfAbsSq = data.psfAbsSq
+    image = data.image
 
-nu = 1e-1
-preconditioner_polynomial = np.polynomial.Polynomial([nu, 1])
+    max_iterations = parameters.iterations
+    k_max = parameters.k_max
+    nu = parameters.nu
+    lam_PNPD = parameters.lam_PNPD
+    lam_NPD = parameters.lam_NPD
 
-functions = NPDIT_functions(
-    f=lambda x: scalar_product(convolve_2D_fft(x, psf) - b),
-    grad_f=lambda x: gradient_convolution_least_squares(x, bFFT, psfFFT, psfFFTC),
-    prox_h_star=lambda alpha, x: prox_h_star_TV(lam, x),
-    mulW=gradient_2D_signal,
-    mulWT=divergence_2D_signal,
-    mulP_inv= lambda x: multiply_P_inverse(p=preconditioner_polynomial, x=x, psfAbsSq=psfAbsSq),
-    mulP = lambda x: multiply_P(p=preconditioner_polynomial, x=x, psfAbsSq=psfAbsSq),
-    metrics=metrics
-)
+    parameters = NPDIT_parameters(maxIter=max_iterations, alpha=1, beta=1/8, kMax=k_max, extrapolation=True, ground_truth=image)
 
-imRec = {}
-metrics_results = {}
+    metrics = image_metrics()
 
-method = "PNPD"
-print(method)
-im_rec_tmp, metrics_results_tmp = PNPD(x1=b, parameters=parameters, functions=functions)
-imRec[method] = im_rec_tmp
-metrics_results[method] = metrics_results_tmp
-print("\n\n\n\n")
+    preconditioner_polynomial = np.polynomial.Polynomial([nu, 1])
 
-method = "NPD"
-parameters.reset()
-lam = 1e-4
-functions.prox_h_star = lambda alpha, x: prox_h_star_TV(lam, x)
+    functions = NPDIT_functions(
+        f=lambda x: scalar_product(convolve_2D_fft(x, psf) - blurred), # TODO convolve_2d_fft should use psfFFT as input
+        grad_f=lambda x: gradient_convolution_least_squares(x, bFFT, psfFFT, psfFFTC),
+        prox_h_star=lambda alpha, x: prox_h_star_TV(lam_PNPD, x),
+        mulW=gradient_2D_signal,
+        mulWT=divergence_2D_signal,
+        mulP_inv= lambda x: multiply_P_inverse(p=preconditioner_polynomial, x=x, psfAbsSq=psfAbsSq),
+        mulP = lambda x: multiply_P(p=preconditioner_polynomial, x=x, psfAbsSq=psfAbsSq),
+        metrics=metrics
+    )
 
-print(method)
-im_rec_tmp, metrics_results_tmp = NPD(x1=b, parameters=parameters, functions=functions)
-imRec[method] = im_rec_tmp
-metrics_results[method] = metrics_results_tmp
-print("\n\n\n\n")
+    im_rec = {}
+    metrics_results = {}
 
-method = "NPDIT no backtracking"
-parameters.reset()
-parameters.beta *= nu
+    print(TEST_NAME)
+    print("\n\n\n\n")
 
-print(method)
-im_rec_tmp, metrics_results_tmp = NPDIT_no_backtracking(x1=b, parameters=parameters, functions=functions)
-imRec[method] = im_rec_tmp
-metrics_results[method] = metrics_results_tmp
-print("\n\n\n\n")
+    method = "PNPD"
+    print(method)
+    im_rec_tmp, metrics_results_tmp = PNPD(x1=blurred, parameters=parameters, functions=functions)
+    im_rec[method] = im_rec_tmp
+    metrics_results[method] = metrics_results_tmp
+    print("\n\n\n\n")
 
-method = "NPDIT"
-parameters.reset()
+    method = "NPD"
+    parameters.reset()
+    parameters.beta = 1/8
+    functions.prox_h_star = lambda alpha, x: prox_h_star_TV(lam_NPD, x)
 
-print(method)
-im_rec_tmp, metrics_results_tmp = NPDIT(x1=b, parameters=parameters, functions=functions)
-imRec[method] = im_rec_tmp
-metrics_results[method] = metrics_results_tmp
-print("\n\n\n\n")
+    print(method)
+    im_rec_tmp, metrics_results_tmp = NPD(x1=blurred, parameters=parameters, functions=functions)
+    im_rec[method] = im_rec_tmp
+    metrics_results[method] = metrics_results_tmp
+    print("\n\n\n\n")
 
-PLOT = True
-PLOT_RECONSTRUCTION = False
-if PLOT:
-    import matplotlib.pyplot as plt
+    method = "NPDIT no backtracking"
+    parameters.reset()
+    parameters.beta *= nu
 
-    with np.load(f"./npz/Blurred.npz") as data:
-        image = data["image"]
-        if image.shape.__len__() == 3 and image.shape[2] == 3:
-            RGB = True
-        else:
-            RGB = False
+    print(method)
+    im_rec_tmp, metrics_results_tmp = NPDIT_no_backtracking(x1=blurred, parameters=parameters, functions=functions)
+    im_rec[method] = im_rec_tmp
+    metrics_results[method] = metrics_results_tmp
+    print("\n\n\n\n")
 
-    cmap = "gray" if not RGB else None
+    method = "NPDIT"
+    parameters.reset()
+
+    print(method)
+    im_rec_tmp, metrics_results_tmp = NPDIT(x1=blurred, parameters=parameters, functions=functions)
+    im_rec[method] = im_rec_tmp
+    metrics_results[method] = metrics_results_tmp
+    print("\n\n\n\n")
+
+    output_data = TestData(im_rec=im_rec, metrics_results=metrics_results)
+
+    if save_path is not None:
+        save_data(save_path, output_data)
+    
+    return output_data
+
+
+def plot(data: TestData, save_path = None):
+    imRec = data.im_rec
+    metrics_results = data.metrics_results
+    metrics = list(next(iter(metrics_results.values())).keys())
+    metrics.remove("time")
 
     # Results vs iterations
-    for key in metrics.keys():
+    for key in metrics:
         plt.figure()
         for method in imRec.keys():
             plt.plot(metrics_results[method][key], label=method)
         plt.legend()
         plt.title(key + " vs iterations")
+        if save_path is not None:
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            plt.savefig(save_path + key + "_iterations" + ".pdf", bbox_inches='tight')
 
     # Change time from relative to absolute
     from tests.plot_extras import relative_time_to_absolute
@@ -129,19 +157,25 @@ if PLOT:
         metrics_results[method]["time"] = relative_time_to_absolute(metrics_results[method]["time"])
 
     # Results vs time
-    for key in metrics.keys():
+    for key in metrics:
         plt.figure()
         for method in imRec.keys():
             plt.plot(metrics_results[method]["time"], metrics_results[method][key], label=method)
         plt.legend()
         plt.title(key + " vs time")
+        if save_path is not None:
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            plt.savefig(save_path + key + "_time" + ".pdf", bbox_inches='tight')
 
-    
-    
-    if PLOT_RECONSTRUCTION:
-        for method in imRec.keys():
-            plt.figure()
-            plt.imshow(imRec[method], cmap=cmap)
-            plt.title(method)
+if __name__ == "__main__":
+    from utilities import load_data
 
-    plt.show()
+    # Load data (generated with generateBlurredImage.py)
+    DATA_PATH = "." + PICKLE_SAVE_FOLDER + "/Blurred"
+    DATA_SAVE_PATH = "." + PICKLE_SAVE_FOLDER + "/" + TEST_NAME
+    PLOT_SAVE_PATH = "." + PLOTS_SAVE_FOLDER + "/" + TEST_NAME + "/"
+    data = load_data(DATA_PATH)
+    parameters = Parameters(nu=1e-1, lam_PNPD=1e-3, lam_NPD=1e-4, iterations=10, k_max=1)
+    output_data = compute(data, parameters, DATA_SAVE_PATH)
+    plot(output_data, PLOT_SAVE_PATH)
+    
