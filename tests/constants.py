@@ -1,2 +1,2 @@
-NUMPY_ZIP_SAVE_FOLDER = "./npz"
-PLOTS_SAVE_FOLDER = "../plots"
+PICKLE_SAVE_FOLDER = "/pickle"
+PLOTS_SAVE_FOLDER = "/plots"
