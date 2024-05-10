@@ -17,5 +17,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-def create_dict(**kargs):
-  return kargs
+import pickle
+import os
+
+def save_data(path, data):
+  os.makedirs(os.path.dirname(path), exist_ok=True)
+  with open(path, "wb") as outfile:
+      pickle.dump(data, outfile)
+
+def load_data(path):
+  with open(path, "rb") as infile:
+    return pickle.load(infile)
+  
