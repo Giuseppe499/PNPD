@@ -108,16 +108,7 @@ if __name__ == "__main__":
     plot = True
     if plot:
         import matplotlib.pyplot as plt
+        from plot_extras import plot_image_psf_blurred
 
-        fig, axs = plt.subplots(1, 3, figsize=(12, 4))
-        if not RGB:
-            cmap = "gray"
-        else:
-            cmap = None
-        axs[0].imshow(image, cmap=cmap, vmin=0, vmax=1)
-        axs[0].set_title("Original")
-        axs[1].imshow(psfCentered / psfCentered.max(), cmap=cmap)
-        axs[1].set_title("PSF")
-        axs[2].imshow(blurred, cmap=cmap, vmin=0, vmax=1)
-        axs[2].set_title("Blurred")
+        plot_image_psf_blurred(image, psf, blurred)
         plt.show()
