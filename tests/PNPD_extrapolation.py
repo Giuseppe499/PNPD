@@ -24,11 +24,9 @@ from math_extras import (
     divergence_2D_signal,
     prox_h_star_TV,
     multiply_P_inverse,
-    multiply_P,
-    scalar_product,
-    convolve_2D_fft
+    multiply_P
 )
-from solvers import PNPD, NPD, NPDIT, NPDIT_no_backtracking, NPDIT_parameters, NPDIT_functions, image_metrics
+from solvers import PNPD, PNPD_parameters, PNPD_functions, image_metrics
 from tests.constants import *
 from tests.generate_blurred_image import DeblurProblemData
 from dataclasses import dataclass
@@ -36,15 +34,14 @@ from utilities import save_data
 import matplotlib.pyplot as plt
 import os
 
-TEST_NAME = "PNPD_comparison"
+TEST_NAME = "PNPD_extrapolation"
 
 @dataclass
 class Parameters:
     nu: float
     lam_PNPD: float
-    lam_NPD: float
     iterations: int = 10
-    k_max: list[int] = None
+    k_max: int = 1
 
 @dataclass
 class TestData:
@@ -52,20 +49,18 @@ class TestData:
     metrics_results: dict
 
 def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
-    methods_parameters = NPDIT_parameters(maxIter=parameters.iterations, alpha=1, beta=1/8, kMax=parameters.k_max, extrapolation=True, ground_truth=data.image)
+    methods_parameters = PNPD_parameters(maxIter=parameters.iterations, alpha=1, beta=1/8, kMax=parameters.k_max, extrapolation=True, ground_truth=data.image)
 
     metrics = image_metrics()
 
     preconditioner_polynomial = np.polynomial.Polynomial([parameters.nu, 1])
 
-    functions = NPDIT_functions(
-        f=lambda x: scalar_product(convolve_2D_fft(x, data.psf) - data.blurred), # TODO convolve_2d_fft should use psfFFT as input
+    functions = PNPD_functions(
         grad_f=lambda x: gradient_convolution_least_squares(x, data.bFFT, data.psfFFT, data.psfFFTC),
         prox_h_star=lambda alpha, x: prox_h_star_TV(parameters.lam_PNPD, x),
         mulW=gradient_2D_signal,
         mulWT=divergence_2D_signal,
         mulP_inv= lambda x: multiply_P_inverse(p=preconditioner_polynomial, x=x, psfAbsSq=data.psfAbsSq),
-        mulP = lambda x: multiply_P(p=preconditioner_polynomial, x=x, psfAbsSq=data.psfAbsSq),
         metrics=metrics
     )
 
@@ -75,54 +70,18 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     print(TEST_NAME)
     print("\n\n\n\n")
 
-    methods_parameters.kMax = parameters.k_max[0]
     method = "PNPD"
-    method += f" $\lambda={parameters.lam_PNPD}$"
-    method += f" $k_{{max}}={methods_parameters.kMax}$"
-    method += f" $\\nu={parameters.nu}$"
     print(method)
     im_rec_tmp, metrics_results_tmp = PNPD(x1=data.blurred, parameters=methods_parameters, functions=functions)
     im_rec[method] = im_rec_tmp
     metrics_results[method] = metrics_results_tmp
     print("\n\n\n\n")
 
-    methods_parameters.kMax = parameters.k_max[1]
-    method = "NPD"
-    method += f" $\lambda={parameters.lam_NPD}$"
-    method += f" $k_{{max}}={methods_parameters.kMax}$"
+    method = "PNPD_NE"
     methods_parameters.reset()
-    methods_parameters.beta = 1/8
-    functions.prox_h_star = lambda alpha, x: prox_h_star_TV(parameters.lam_NPD, x)
-
+    methods_parameters.extrapolation = False
     print(method)
-    im_rec_tmp, metrics_results_tmp = NPD(x1=data.blurred, parameters=methods_parameters, functions=functions)
-    im_rec[method] = im_rec_tmp
-    metrics_results[method] = metrics_results_tmp
-    print("\n\n\n\n")
-
-    methods_parameters.kMax = parameters.k_max[2]
-    method = "NPDIT_NB"
-    method += f" $\lambda={parameters.lam_NPD}$"
-    method += f" $k_{{max}}={methods_parameters.kMax}$"
-    method += f" $\\nu={parameters.nu}$"
-    methods_parameters.reset()
-    methods_parameters.beta *= parameters.nu
-
-    print(method)
-    im_rec_tmp, metrics_results_tmp = NPDIT_no_backtracking(x1=data.blurred, parameters=methods_parameters, functions=functions)
-    im_rec[method] = im_rec_tmp
-    metrics_results[method] = metrics_results_tmp
-    print("\n\n\n\n")
-
-    methods_parameters.kMax = parameters.k_max[3]
-    method = "NPDIT"
-    method += f" $\lambda={parameters.lam_NPD}$"
-    method += f" $k_{{max}}={methods_parameters.kMax}$"
-    method += f" $\\nu={parameters.nu}$"
-    methods_parameters.reset()
-
-    print(method)
-    im_rec_tmp, metrics_results_tmp = NPDIT(x1=data.blurred, parameters=methods_parameters, functions=functions)
+    im_rec_tmp, metrics_results_tmp = PNPD(x1=data.blurred, parameters=methods_parameters, functions=functions)
     im_rec[method] = im_rec_tmp
     metrics_results[method] = metrics_results_tmp
     print("\n\n\n\n")
@@ -176,7 +135,7 @@ if __name__ == "__main__":
     DATA_SAVE_PATH = "." + PICKLE_SAVE_FOLDER + "/" + TEST_NAME
     PLOT_SAVE_PATH = "." + PLOTS_SAVE_FOLDER + "/" + TEST_NAME + "/"
     data = load_data(DATA_PATH)
-    parameters = Parameters(nu=1e-1, lam_PNPD=1e-3, lam_NPD=1e-4, iterations=10, k_max=1)
+    parameters = Parameters(nu=1e-1, lam_PNPD=1e-3, iterations=10, k_max=1)
     output_data = compute(data, parameters, DATA_SAVE_PATH)
     plot(output_data, PLOT_SAVE_PATH)
     
