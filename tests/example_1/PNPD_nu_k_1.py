@@ -1,6 +1,8 @@
-import tests.PNPD_comparison as test
+import tests.PNPD_nu as test
+from PNPD_nu import parameters
+SUB_TEST_NAME = "PNPD_k=1"
 
-parameters = test.Parameters(nu=1e-1, lam_PNPD=2e-3, lam_NPD=2e-4, iterations=150, k_max= [3,1,3,3])
+parameters.k_max = [1 for nu in parameters.nu]
 
 def compute(*args, **kwargs):
     return test.compute(parameters=parameters, *args, *kwargs)
@@ -15,4 +17,4 @@ if __name__ == "__main__":
     from tests.constants import *
     data = load_data(EXAMPLE_DATA_PATH)
     test_data = compute(data)
-    plot(test_data, ".." + PLOTS_SAVE_FOLDER + "/" + EXAMPLE_NAME + "/" + test.TEST_NAME + "/")
+    plot(test_data, ".." + PLOTS_SAVE_FOLDER + "/" + EXAMPLE_NAME + "/" + test.TEST_NAME + "/" + SUB_TEST_NAME + "/")

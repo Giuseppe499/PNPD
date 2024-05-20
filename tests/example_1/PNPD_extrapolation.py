@@ -1,6 +1,6 @@
-import tests.PNPD_comparison as test
+import tests.PNPD_extrapolation as test
 
-parameters = test.Parameters(nu=1e-1, lam_PNPD=2e-3, lam_NPD=2e-4, iterations=150, k_max= [3,1,3,3])
+parameters = test.Parameters(nu=1e-1, lam_PNPD=1e-3, iterations=150)
 
 def compute(*args, **kwargs):
     return test.compute(parameters=parameters, *args, *kwargs)
