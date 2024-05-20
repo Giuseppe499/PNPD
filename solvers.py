@@ -117,9 +117,9 @@ def metrics_decorator(step):
         kwargs.pop("ground_truth", None)
 
         # Time the function
-        start = time.process_time()
+        start = time.perf_counter()
         result = step(*args, **kwargs)
-        elapsed = time.process_time() - start
+        elapsed = time.perf_counter() - start
 
         # Compute metrics
         metrics_results = {}
@@ -337,9 +337,9 @@ def generic_NPD(x1: np.ndarray, parameters: NPD_parameters, functions: NPD_funct
 
     # First step: needed to compute C
     parameters.iteration = parameters.startIteration
-    start = time.process_time()
+    start = time.perf_counter()
     x1 = step(x1, parameters, functions)[0]
-    elapsed = time.process_time() - start
+    elapsed = time.perf_counter() - start
 
     parameters.C = 10 * norm(x1 - parameters.x0)
     parameters.startIteration += 1
