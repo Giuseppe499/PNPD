@@ -23,11 +23,11 @@ if __name__ == "__main__":
     # Move PSF center to the top-left corner
     psf = move_psf_center(psf_centered)
 
-    blurred = generate_blurred_image(
+    data = generate_blurred_image(
         image, noisePercent=0.01, psf=psf, save_path=DATA_SAVE_PATH
-    ).blurred
+    )
 
     from matplotlib import pyplot as plt
     from tests.plot_extras import plot_image_psf_blurred
-    plot_image_psf_blurred(image, psf_centered, blurred)
+    plot_image_psf_blurred(image, psf_centered, data.blurred)
     plt.show()
