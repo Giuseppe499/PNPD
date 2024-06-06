@@ -3,7 +3,7 @@ from PNPD_comparison import parameters as PNPD_comparison_parameters
 from numpy import mean
 
 parameters = test.Parameters(**PNPD_comparison_parameters.__dict__)
-parameters.k_max = [1,4,16,64,256]
+parameters.k_max = [2**i for i in range(7)]
 parameters.iterations = 50
 
 def compute(*args, **kwargs):
@@ -13,7 +13,7 @@ def plot(*args, **kwargs):
     return test.plot(*args, **kwargs)
 
 def delta_table(data: test.TestData):
-    table = [["$k_{{max}}$", "PNPD", "NPDIT\_NB", "$\Delta$", "$\Delta/$PNPD"]]
+    table = [["$k_{{max}}$", "PNPD", "NPDIT\_NB", "$\Delta$", "$NPDIT\_NB/PNPD"]]
     for k_max in parameters.k_max:
         row = []
         row.append(f"{k_max}")
@@ -23,7 +23,7 @@ def delta_table(data: test.TestData):
         row.append(NPDIT_average_timestep)
         delta = NPDIT_average_timestep-PNPD_average_timestep
         row.append(delta)
-        row.append(delta/PNPD_average_timestep)
+        row.append(NPDIT_average_timestep/PNPD_average_timestep)
         table.append(row)
     return table
         
