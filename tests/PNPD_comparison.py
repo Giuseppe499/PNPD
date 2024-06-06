@@ -26,7 +26,8 @@ from math_extras import (
     multiply_P_inverse,
     multiply_P,
     scalar_product,
-    convolve_2D_fft
+    convolve_2D_fft,
+    total_variation_2D
 )
 from solvers import PNPD, NPD, NPDIT, NPDIT_no_backtracking, NPDIT_parameters, NPDIT_functions, image_metrics
 from tests.constants import *
@@ -68,6 +69,8 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
         mulP = lambda x: multiply_P(p=preconditioner_polynomial, x=x, psfAbsSq=data.psfAbsSq),
         metrics=metrics
     )
+
+    metrics["Objective function"] = lambda x, ground_truth: functions.f(x) + parameters.lam_NPD * total_variation_2D(x)
 
     im_rec = {}
     metrics_results = {}
