@@ -69,6 +69,12 @@ def prox_h_star_TV(lam: float, dxdy: np.array):
     factor = np.stack((factor, factor))
     return dxdy / factor
 
+def total_variation_2D(x:np.ndarray):
+    dxdy = gradient_2D_signal(x)
+    dx = dxdy[0, ...]
+    dy = dxdy[1, ...]
+    return np.sum(np.sqrt(dx*dx + dy*dy))
+
 def convolve_2D_fft(in1, in2, axes = (0, 1)):
     return np.real(ifft2(fft2(in1, axes=axes) * fft2(in2, axes=axes), axes=axes))
 
