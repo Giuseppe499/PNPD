@@ -130,10 +130,10 @@ def metrics_decorator(step):
         return result, metrics_results
     return wrapper
 
-def image_metrics():
+def image_metrics(channel_axis = None):
     """Return a dictionary of image metrics functions."""
     return {
-        "SSIM": lambda x, ground_truth: ssim(x, ground_truth, data_range=1),
+        "SSIM": lambda x, ground_truth: ssim(x, ground_truth, data_range=1, channel_axis=channel_axis),
         "RRE": lambda x, ground_truth: norm(x - ground_truth) / norm(ground_truth),
     }
 
