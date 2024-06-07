@@ -3,7 +3,7 @@ import tests.PNPD_comparison as test
 parameters = test.Parameters(nu=1e-1, lam_PNPD=2e-3, lam_NPD=2e-4, iterations=150, k_max= [3,1,3,3])
 
 def compute(*args, **kwargs):
-    return test.compute(parameters=parameters, *args, *kwargs)
+    return test.compute(parameters=parameters, *args, **kwargs)
 
 def plot(*args, **kwargs):
     return test.plot(*args, **kwargs)
