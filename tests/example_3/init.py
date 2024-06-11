@@ -28,6 +28,6 @@ if __name__ == "__main__":
     ).blurred
 
     from matplotlib import pyplot as plt
-    from tests.plot_extras import plot_image_psf_blurred
+    from plot_extras import plot_image_psf_blurred
     plot_image_psf_blurred(image, psf_centered, blurred)
     plt.show()

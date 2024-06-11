@@ -156,7 +156,7 @@ def plot(data: TestData, save_path = None):
             plt.savefig(save_path + key + "_iterations" + ".pdf", bbox_inches='tight')
 
     # Change time from relative to absolute
-    from tests.plot_extras import relative_time_to_absolute
+    from plot_extras import relative_time_to_absolute
     for method in imRec.keys():
         metrics_results[method]["time"] = relative_time_to_absolute(metrics_results[method]["time"])
 
