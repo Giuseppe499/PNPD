@@ -21,6 +21,9 @@ import os
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+from dataclasses import dataclass
+import typing
+import pandas as pd
 
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams["font.size"] = 12
@@ -28,9 +31,46 @@ matplotlib.rcParams['font.family'] = 'STIXGeneral'
 props = dict(boxstyle='square', fc="white", ec="black" , alpha=0.5)
 boxPos = (0.95, 0.98)
 
-def generate_save_path(filename, directory="./Plots/"):
-        os.makedirs(directory, exist_ok=True)
-        return os.path.join(directory, filename)
+metrics_results_type = typing.Dict[str, typing.Dict[str, np.ndarray]]
+
+@dataclass
+class TestData:
+    im_rec: typing.Dict[str, np.ndarray]
+    metrics_results: metrics_results_type
+
+def plot_metrics_results(metrics_results: metrics_results_type, save_folder_path: str = None):
+    metrics_results = pd.DataFrame(metrics_results)
+    metrics = list(metrics_results.index)
+    metrics.remove("time")
+
+    # Results vs iterations
+    for key in metrics:
+        plot_dict(metrics_results.loc[key].to_dict(), save_path=save_folder_path + key + "_iterations" + ".pdf", xlabel="Iterations", ylabel=key)
+
+    # Change time from relative to absolute
+    time = metrics_results.loc["time"].to_dict()
+    for method in time:
+        time[method] = relative_time_to_absolute(time[method])
+
+    # Results vs time
+    for key in metrics:
+        plot_dict(x=time, y=metrics_results.loc[key].to_dict(), save_path=save_folder_path + key + "_time" + ".pdf", xlabel="Time (s)", ylabel=key)
+
+def plot_dict(y: typing.Dict[str, np.ndarray], x:typing.Dict[str, np.ndarray]=None, save_path: str = None, title:str = None, xlabel:str = None, ylabel:str = None):
+    plt.figure()
+    for key in y:
+        if x is not None:
+            plt.plot(x[key], y[key], label=key)
+        else:
+            plt.plot(y[key], label=key)
+    plt.legend()
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    if save_path is not None:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path, bbox_inches='tight')
+
 
 def relative_time_to_absolute(timeList):
     absTimeList = np.zeros(len(timeList))
@@ -57,30 +97,3 @@ def plot_image_psf_blurred(image, psf_centered, blurred):
     axs[1].set_title("PSF")
     axs[2].imshow(blurred, cmap=cmap, vmin=0, vmax=1)
     axs[2].set_title("Blurred")
-
-def plot_lists(Y, X = None, stopIndices = None, labels = None, labelsStop = None, title = None, xlabel = None, ylabel = None, saveName = None, linestyle = None, semilogy = False):
-        plt.figure()
-        if X is None:
-            X = [np.arange(len(Y[i])) for i in range(len(Y))]
-        if labels is None:
-            labels = ['' for i in range(len(Y))]
-        if linestyle is None:
-            linestyle = ['-' for i in range(len(Y))]
-        for i in range(len(Y)):
-            if semilogy:
-                plt.semilogy(X[i], Y[i], label=labels[i], linestyle=linestyle[i])
-            else:
-                plt.plot(X[i], Y[i], label=labels[i], linestyle=linestyle[i])
-        plt.gca().set_prop_cycle(None)
-        if stopIndices is not None:
-            for i in range(len(stopIndices)):
-                plt.plot(X[i][stopIndices[i]], Y[i][stopIndices[i]], 'o', label=labelsStop[i])
-        plt.legend()
-        plt.autoscale(enable=True, axis='x', tight=True)
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-        plt.title(title)
-        
-        os.makedirs(os.path.dirname(generate_save_path(saveName)), exist_ok=True)
-        if saveName is not None:
-            plt.savefig(generate_save_path(saveName), bbox_inches='tight')

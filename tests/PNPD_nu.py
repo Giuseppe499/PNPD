@@ -30,8 +30,7 @@ from tests.constants import *
 from tests.generate_blurred_image import DeblurProblemData
 from dataclasses import dataclass
 from utilities import save_data
-import matplotlib.pyplot as plt
-import os
+from plot_extras import TestData, plot_metrics_results
 
 TEST_NAME = "PNPD_nu"
 
@@ -42,11 +41,6 @@ class Parameters:
     k_max: list[int]
     iterations: int = 10
     extrapolation: list[bool] = True
-
-@dataclass
-class TestData:
-    im_rec: dict
-    metrics_results: dict
 
 def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     methods_parameters = PNPD_parameters(maxIter=parameters.iterations, alpha=1, beta=1/8, kMax=None, extrapolation=parameters.extrapolation, ground_truth=data.image)
@@ -105,38 +99,8 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     return output_data
 
 
-def plot(data: TestData, save_path = None):
-    imRec = data.im_rec
-    metrics_results = data.metrics_results
-    metrics = list(next(iter(metrics_results.values())).keys())
-    metrics.remove("time")
-
-    # Results vs iterations
-    for key in metrics:
-        plt.figure()
-        for method in imRec.keys():
-            plt.plot(metrics_results[method][key], label=method)
-        plt.legend()
-        plt.title(key + " vs iterations")
-        if save_path is not None:
-            os.makedirs(os.path.dirname(save_path), exist_ok=True)
-            plt.savefig(save_path + key + "_iterations" + ".pdf", bbox_inches='tight')
-
-    # Change time from relative to absolute
-    from plot_extras import relative_time_to_absolute
-    for method in imRec.keys():
-        metrics_results[method]["time"] = relative_time_to_absolute(metrics_results[method]["time"])
-
-    # Results vs time
-    for key in metrics:
-        plt.figure()
-        for method in imRec.keys():
-            plt.plot(metrics_results[method]["time"], metrics_results[method][key], label=method)
-        plt.legend()
-        plt.title(key + " vs time")
-        if save_path is not None:
-            os.makedirs(os.path.dirname(save_path), exist_ok=True)
-            plt.savefig(save_path + key + "_time" + ".pdf", bbox_inches='tight')
+def plot(data: TestData, save_path = None):    
+    plot_metrics_results(data.metrics_results, save_path)
 
 if __name__ == "__main__":
     from utilities import load_data
