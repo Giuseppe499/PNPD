@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import numpy as np
-from mathExtras import (
+from math_extras import (
     gradient_convolution_least_squares,
     gradient_2D_signal,
     divergence_2D_signal,
