@@ -64,7 +64,7 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
         metrics=metrics
     )
 
-    metrics["Objective function"] = lambda x, ground_truth: functions.f(x) + parameters.lam_NPD * total_variation_2D(x)
+    metrics["$\|Ax-b\|_2^2 + \lambda TV(x)$"] = lambda x, ground_truth: functions.f(x) + parameters.lam_NPD * total_variation_2D(x)
 
     im_rec = {}
     metrics_results = {}
