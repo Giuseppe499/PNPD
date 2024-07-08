@@ -72,6 +72,11 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     print(TEST_NAME)
     print("\n\n\n\n")
 
+    e = np.random.randn(*data.blurred.shape)
+    s = scalar_product(e, functions.mulP_inv(e))/scalar_product(e,e)
+    lam_PNPD = parameters.lam_NPD*s
+    print(f"lam_PNPD given: {parameters.lam_PNPD}, estimated lam_PNPD: {lam_PNPD}")
+
     methods_parameters.kMax = parameters.k_max[0]
     method = "PNPD"
     method += f" $\lambda={parameters.lam_PNPD}$"
