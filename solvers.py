@@ -110,6 +110,7 @@ def genericFBS(
             update_metrics_dict(metrics_results, new_metrics_results)           
         else:
             x1 = tmp[0]
+            print(info) if parameters.verbose else None
 
     return x1, metrics_results
 
@@ -174,7 +175,7 @@ def FBS_step(
     """Forward-Backward Splitting step."""
     return functions.prox_g(
         parameters.alpha, descent_step(x1, parameters, functions)
-    )
+    ), parameters
 
 @dataclass
 class FFBS_parameters(FBS_parameters):
@@ -190,6 +191,7 @@ class FFBS_parameters(FBS_parameters):
 
 def FFBS(x1: np.ndarray, parameters: FFBS_parameters, functions: FBS_functions):
     """Fast Forward-Backward Splitting algorithm."""
+    parameters.x0 = x1
     return genericFBS(x1, parameters, functions, FFBS_step)
 
 
@@ -201,7 +203,7 @@ def FFBS_step(
     parameters.t0 = t1
     extrapolatedPoint = compute_extra_point(x1, parameters.x0, gamma)
     parameters.x0 = x1
-    return FBS_step(extrapolatedPoint, parameters, functions), parameters
+    return FBS_step(extrapolatedPoint, parameters, functions)[0], parameters
 
 
 def gamma_FFBS(t0: float):
@@ -244,7 +246,7 @@ class NPD_functions(FBS_functions):
 def NPD_no_extrapolation_step(
     x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions, descent_step: Callable = gradient_descent_step):
     """Nested Primal-Dual step without extrapolation."""
-    return FBS_step(x1, parameters, functions, descent_step), parameters
+    return FBS_step(x1, parameters, functions, descent_step)[0], parameters
 
 def NPD_extrapolation_decorator(step: Callable):
     def step_with_extrapolation(x1: np.ndarray, parameters: NPD_parameters, functions: NPD_functions):
