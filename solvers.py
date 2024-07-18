@@ -380,9 +380,22 @@ def preconditioned_gradient_descent_step(
 def PNPD_no_extrapolation_step(x1: np.ndarray, parameters: PNPD_parameters, functions: PNPD_functions):
     return NPD_no_extrapolation_step(x1=x1, parameters=parameters, functions=functions, descent_step=preconditioned_gradient_descent_step)
 
+@dataclass
+class PNPD_non_stationary_functions(PNPD_functions):
+    mulP_inv_scheduler: Callable[[int], Callable[[np.ndarray], np.ndarray]] = None
+    prox_h_star_scheduler: Callable[[int], Callable[[float,np.ndarray],np.ndarray]] = None
+
+def PNPD_non_stationary_no_extrapolation_step(x1: np.ndarray, parameters: PNPD_parameters, functions: PNPD_non_stationary_functions):
+    functions.mulP_inv = functions.mulP_inv_scheduler(parameters.iteration)
+    functions.prox_h_star = functions.prox_h_star_scheduler(parameters.iteration)
+    return PNPD_no_extrapolation_step(x1=x1, parameters=parameters,functions=functions)
+
 def PNPD(x1: np.ndarray, parameters: PNPD_parameters, functions: PNPD_functions):
     """Preconditioned Nested Primal-Dual algorithm."""
     return generic_NPD(x1, parameters, functions, NPD_prox_estimator.primal_dual_prox_estimator, PNPD_no_extrapolation_step)
+
+def PNPD_non_stationary(x1: np.ndarray, parameters: PNPD_parameters, functions: PNPD_non_stationary_functions):
+    return generic_NPD(x1, parameters, functions, NPD_prox_estimator.primal_dual_prox_estimator, PNPD_non_stationary_no_extrapolation_step)
 
 class NPDIT_prox_estimator(NPD_prox_estimator):
     """Class for the Nested Primal-Dual Iterated Tikhonov proximal estimator."""
