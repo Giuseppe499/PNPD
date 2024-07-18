@@ -87,13 +87,19 @@ def is_RGB(image):
           return True
      else:
           raise Exception(f"Only grayscale and RGB images supported: input image has {dim} dimensions")
+     
+def plot_images(images: list, titles: list = None, shape = None, cmap="gray"):
+    if shape is None:
+        shape = [1, len(images)]
+    if titles is None:
+        titles = [None] * len(images)
+    figsize=np.array((shape[1],shape[0]))*3
+    fig, axs = plt.subplots(shape[0], shape[1], figsize=figsize)
+    axs = np.matrix(axs)
+    for i in range(shape[0]):
+        for j in range(shape[1]):
+            axs[i,j].imshow(images[i*shape[0]+j], cmap=cmap, vmin=0, vmax=1)
+            axs[i,j].set_title(titles[i*shape[0]+j])
     
 def plot_image_psf_blurred(image, psf_centered, blurred):
-    fig, axs = plt.subplots(1, 3, figsize=(12, 4))
-    cmap = None if is_RGB(image) else "gray"
-    axs[0].imshow(image, cmap=cmap, vmin=0, vmax=1)
-    axs[0].set_title("Original")
-    axs[1].imshow(psf_centered / psf_centered.max(), cmap=cmap)
-    axs[1].set_title("PSF")
-    axs[2].imshow(blurred, cmap=cmap, vmin=0, vmax=1)
-    axs[2].set_title("Blurred")
+    plot_images([image, psf_centered, blurred], ["Original", "PSF", "Blurred"])
