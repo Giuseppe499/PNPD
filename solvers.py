@@ -28,6 +28,11 @@ from dataclasses import dataclass
 
 import time
 
+def deblur_image_pseudoinverse(blurred_image, psf):
+    psf_FFT = fft2(psf)
+    pseudoinverse = np.divide(1, psf_FFT,
+                              out=np.zeros(psf.shape, dtype=psf_FFT.dtype), where=psf_FFT>1e-15)
+    return np.real(ifft2(fft2(blurred_image) * pseudoinverse))
 
 def deblur_image_naive(blurred_image, psf, epsilon: float):
     return np.real(ifft2(fft2(blurred_image) / np.clip(fft2(psf), epsilon, None)))
