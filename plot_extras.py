@@ -46,6 +46,7 @@ def plot_metrics_results(metrics_results: metrics_results_type, save_folder_path
     # Results vs iterations
     for key in metrics:
         plot_dict(metrics_results.loc[key].to_dict(), save_path=save_folder_path + key + "_iterations" + ".pdf", xlabel="Iterations", ylabel=key)
+        plot_dict(metrics_results.loc[key].to_dict(), save_path=save_folder_path + key + "_semilogy_iterations" + ".pdf", xlabel="Iterations", ylabel=key, plot_function=plt.semilogy)
 
     # Change time from relative to absolute
     time = metrics_results.loc["time"].to_dict()
@@ -55,18 +56,20 @@ def plot_metrics_results(metrics_results: metrics_results_type, save_folder_path
     # Results vs time
     for key in metrics:
         plot_dict(x=time, y=metrics_results.loc[key].to_dict(), save_path=save_folder_path + key + "_time" + ".pdf", xlabel="Time (s)", ylabel=key)
+        plot_dict(x=time, y=metrics_results.loc[key].to_dict(), save_path=save_folder_path + key + "_semilogy_time" + ".pdf", xlabel="Time (s)", ylabel=key, plot_function=plt.semilogy)
 
-def plot_dict(y: typing.Dict[str, np.ndarray], x:typing.Dict[str, np.ndarray]=None, save_path: str = None, title:str = None, xlabel:str = None, ylabel:str = None):
+def plot_dict(y: typing.Dict[str, np.ndarray], x:typing.Dict[str, np.ndarray]=None, save_path: str = None, title:str = None, xlabel:str = None, ylabel:str = None, plot_function = plt.plot):
     plt.figure()
     for key in y:
         if x is not None:
-            plt.plot(x[key], y[key], label=key)
+            plot_function(x[key], y[key], label=key)
         else:
-            plt.plot(y[key], label=key)
+            plot_function(y[key], label=key)
     plt.legend()
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
+    plt.gca().autoscale(enable=True, axis='x', tight=True)
     if save_path is not None:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path, bbox_inches='tight')
@@ -93,13 +96,14 @@ def plot_images(images: list, titles: list = None, shape = None, cmap="gray"):
         shape = [1, len(images)]
     if titles is None:
         titles = [None] * len(images)
-    figsize=np.array((shape[1],shape[0]))*3
+    figsize=np.array((shape[1],shape[0]))*3.5
     fig, axs = plt.subplots(shape[0], shape[1], figsize=figsize)
     axs = np.matrix(axs)
     for i in range(shape[0]):
         for j in range(shape[1]):
             axs[i,j].imshow(images[i*shape[0]+j], cmap=cmap, vmin=0, vmax=1)
             axs[i,j].set_title(titles[i*shape[0]+j])
+    plt.tight_layout()
     
 def plot_image_psf_blurred(image, psf_centered, blurred):
     plot_images([image, psf_centered, blurred], ["Original", "PSF", "Blurred"])
