@@ -13,12 +13,14 @@ def plot(*args, **kwargs):
     return test.plot(*args, **kwargs)
 
 def delta_table(data: test.TestData):
-    table = [["$k_{{max}}$", "PNPD", "NPDIT\_NB", "$\Delta$", "$NPDIT\_NB/PNPD"]]
+    table = [["$k_{{max}}$", "PNPD", "NPDIT", "$\Delta$", "NPDIT/PNPD"]]
     for k_max in parameters.k_max:
         row = []
         row.append(f"{k_max}")
-        PNPD_average_timestep = mean(data.metrics_results[f"PNPD, $k_{{max}}={k_max}$"]["time"][1:])
-        NPDIT_average_timestep = mean(data.metrics_results[f"NPDIT_NB, $k_{{max}}={k_max}$"]["time"][1:])
+        PNPD_average_timestep = mean(
+            data.metrics_results[f"PNPD, $k_{{max}}={k_max}$"]["time"][1:])
+        NPDIT_average_timestep = mean(
+            data.metrics_results[f"NPDIT, $k_{{max}}={k_max}$"]["time"][1:])
         row.append(PNPD_average_timestep)
         row.append(NPDIT_average_timestep)
         delta = NPDIT_average_timestep-PNPD_average_timestep
@@ -37,12 +39,15 @@ if __name__ == "__main__":
     from tests.constants import *
     from tabulate import tabulate
     import numpy as np
+    import os
 
     data = load_data(EXAMPLE_DATA_PATH)
     test_data = compute(data)
     table = delta_table(test_data)
     print(tabulate(table, headers="firstrow"))
-    folder = ".." + PLOTS_SAVE_FOLDER + "/" + EXAMPLE_NAME + "/" + test.TEST_NAME + "/"
+    folder = ".." + PLOTS_SAVE_FOLDER + "/" + EXAMPLE_NAME + "/"
+    folder += test.TEST_NAME + "/"
+    os.makedirs(os.path.dirname(folder), exist_ok=True)
     with open(folder + "table.tex", "w") as file:
         file.write(tabulate(table, headers="firstrow", tablefmt="latex_raw"))
     np.savetxt(folder + "table.csv", table, delimiter=",", fmt='%s')

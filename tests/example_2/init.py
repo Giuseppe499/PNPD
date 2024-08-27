@@ -26,11 +26,24 @@ if __name__ == "__main__":
     # Move PSF center to the top-left corner
     psf = move_psf_center(psf_centered)
 
-    blurred = generate_blurred_image(
+    data = generate_blurred_image(
         image, noisePercent=0.01, psf=psf, save_path=DATA_SAVE_PATH
-    ).blurred
+    )
 
     from matplotlib import pyplot as plt
-    from plot_extras import plot_image_psf_blurred
-    plot_image_psf_blurred(image, psf_centered, blurred)
+    from plot_extras import plot_images
+    from math_extras import center_crop
+    import os
+    psf_center_crop = center_crop(psf_centered, (20,20)) / psf_centered.max()
+    plot_images(
+        [image, psf_center_crop, data.convolved, data.blurred],
+        ["$x$\n(ground truth)",
+         "PSF\n(center crop of size $20\\times20$)", 
+         "$\\tilde b = x\circledast_{\\text{2D}}$ PSF",
+         "$b = \\tilde b + e$"],
+         (2,2))
+    save_path = ".." + PLOTS_SAVE_FOLDER + "/" + EXAMPLE_NAME + "/" + "problem.pdf"
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    plt.savefig(save_path)
+
     plt.show()

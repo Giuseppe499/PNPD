@@ -1,7 +1,7 @@
 import tests.PNPD_nu as test
 SUB_TEST_NAME = "PNPD"
 
-parameters = test.Parameters(iterations=150,
+parameters = test.Parameters(iterations=80,
                              nu=[1,1e-1,1e-2],
                              lam_PNPD=[3e-4,2e-3,1e-2],
                              extrapolation=[True, True, True],
@@ -18,6 +18,17 @@ if __name__ == "__main__":
     from init import EXAMPLE_NAME
     from utilities import load_data
     from tests.constants import *
+    from matplotlib import pyplot as plt
     data = load_data(EXAMPLE_DATA_PATH)
     test_data = compute(data)
-    plot(test_data, ".." + PLOTS_SAVE_FOLDER + "/" + EXAMPLE_NAME + "/" + test.TEST_NAME + "/" + SUB_TEST_NAME + "/")
+    folder =  ".." + PLOTS_SAVE_FOLDER + "/" + EXAMPLE_NAME + "/" + test.TEST_NAME + "/" + SUB_TEST_NAME + "/"
+    plot(test_data, folder)
+
+    for key in test_data.im_rec:
+        im_rec = test_data.im_rec[key]
+        plt.figure()
+        plt.imshow(im_rec, cmap="gray", vmin=0, vmax=1)
+        plt.title(f"{key} iteration={parameters.iterations}")
+        plt.savefig(folder + f"{key} iteration={parameters.iterations}.pdf", dpi=600)
+    plt.show()
+        

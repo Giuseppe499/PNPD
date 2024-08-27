@@ -22,42 +22,44 @@ from math_extras import (
     gradient_convolution_least_squares,
     gradient_2D_signal,
     divergence_2D_signal,
-    prox_h_star_TV,
-    multiply_P_inverse,
     scalar_product,
-    total_variation_2D,
-    convolve_2D_fft
+    convolve_2D_fft,
+    total_variation_2D
 )
-from solvers import PNPD, PNPD_parameters, PNPD_functions, image_metrics
+from solvers import PNPD_non_stationary, PNPD_parameters, PNPD_non_stationary_functions, image_metrics
 from tests.constants import *
 from tests.generate_blurred_image import DeblurProblemData
 from dataclasses import dataclass
 from utilities import save_data
 from plot_extras import TestData, plot_metrics_results
+from typing import Callable
+from schedulers import *
 
-TEST_NAME = "PNPD_nu"
+TEST_NAME = "PNPD_bootstrap"
 
 @dataclass
 class Parameters:
     nu: list[float]
-    lam_PNPD: list[float]
-    k_max: list[int]
+    lam: float
     iterations: int = 10
-    extrapolation: list[bool] = True
+    k_max: list[int] = None
+    bootstrap_iterations: list[int] = None
 
 def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
-    methods_parameters = PNPD_parameters(maxIter=parameters.iterations, alpha=1, beta=1/8, kMax=None, extrapolation=parameters.extrapolation, ground_truth=data.image)
+    methods_parameters = PNPD_parameters(maxIter=parameters.iterations, alpha=1, beta=1/8, kMax=parameters.k_max, extrapolation=True, ground_truth=data.image)
 
     metrics = image_metrics()
-
-    functions = PNPD_functions(
+    
+    functions = PNPD_non_stationary_functions(
         grad_f=lambda x: gradient_convolution_least_squares(x, data.bFFT, data.psfFFT, data.psfFFTC),
-        prox_h_star=None,
         mulW=gradient_2D_signal,
         mulWT=divergence_2D_signal,
-        mulP_inv=None,
         metrics=metrics
     )
+
+    lam_NPD = 2e-4
+    f = lambda x: scalar_product(convolve_2D_fft(x, data.psf) - data.blurred)
+    metrics["NPD objective function"] = lambda x, ground_truth: f(x) + lam_NPD * total_variation_2D(x)
 
     im_rec = {}
     metrics_results = {}
@@ -65,36 +67,35 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     print(TEST_NAME)
     print("\n\n\n\n")
 
-    for i, nu in enumerate(parameters.nu):
+    for i in range(len(parameters.nu)):
+        # TODO this can be further optimized by removing the if statement in the
+        # nu bootstrap scheduler
+        bootstrap_iterations = parameters.bootstrap_iterations[i]
+        nu_scheduler = nu_scheduler_bootstrap(
+            parameters.nu[i],
+            bootstrap_iterations
+            )
+        functions.prox_h_star_scheduler = prox_h_star_scheduler(
+            lam_scheduler_norm_precond(nu_scheduler, parameters.lam)
+            )
+        functions.mulP_inv_scheduler = mul_P_inv_scheduler_bootstrap(
+            nu_scheduler,
+            data.psfAbsSq,
+            bootstrap_iterations
+            )
         methods_parameters.reset()
-
-        # Update k_{max}
         methods_parameters.kMax = parameters.k_max[i]
-
-        # Update \nu
-        preconditioner_polynomial = np.polynomial.Polynomial([nu, 1])
-        functions.mulP_inv = lambda x: multiply_P_inverse(p=preconditioner_polynomial, x=x, psfAbsSq=data.psfAbsSq)
-
-        # Update \lambda
-        lam = parameters.lam_PNPD[i]
-        functions.prox_h_star=lambda alpha, x: prox_h_star_TV(lam, x)
-
-        # Update extrapolation
-        methods_parameters.extrapolation = parameters.extrapolation[i]
-
-        # Update metrics
-        res = lambda x: convolve_2D_fft(x, data.psf) - data.blurred
-        f_S = lambda x: scalar_product(res(x),functions.mulP_inv(res(x)))
-        metrics["PNPD objective function"] = lambda x, ground_truth: f_S(x) + lam * total_variation_2D(x)
-
-        method = "PNPD"
-        method += "" if methods_parameters.extrapolation else "_NE"
-        method += f" $\\nu={nu}$"
-        method += f", $\lambda={lam}$"
-        method += f", $k_{{max}}={methods_parameters.kMax}$"
-
+        method = "PNPD,"
+        method += f" $n_\\text{{bt}}={bootstrap_iterations}$,"
+        method += f" $\\nu_0={parameters.nu[i]}$,"
+        # method += f" $\lambda_k={parameters.lam} /\\nu_k$,"
+        # method += f" $k_{{max}}={methods_parameters.kMax}$"
         print(method)
-        im_rec_tmp, metrics_results_tmp = PNPD(x1=data.blurred, parameters=methods_parameters, functions=functions)
+        im_rec_tmp, metrics_results_tmp = PNPD_non_stationary(
+            x1=data.blurred,
+            parameters=methods_parameters,
+            functions=functions
+            )
         im_rec[method] = im_rec_tmp
         metrics_results[method] = metrics_results_tmp
         print("\n\n\n\n")
@@ -108,12 +109,17 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
 
 
 def plot(data: TestData, save_path = None):
+    of_x_hat = float("inf")
     for method in data.metrics_results:
-        of = data.metrics_results[method]["PNPD objective function"]
-        of_x_hat = of[-1]
+        of = data.metrics_results[method]["NPD objective function"]
+        if of[-1] <  of_x_hat:
+            of_x_hat = of[-1]
+    for method in data.metrics_results:
+        of = data.metrics_results[method]["NPD objective function"]
         of = np.abs(of-of_x_hat)/np.abs(of_x_hat)
-        data.metrics_results[method]["PNPD relative objective function"] = of
+        data.metrics_results[method]["NPD relative objective function"] = of
     plot_metrics_results(data.metrics_results, save_path)
+    
 
 if __name__ == "__main__":
     from utilities import load_data
@@ -123,7 +129,6 @@ if __name__ == "__main__":
     DATA_SAVE_PATH = "." + PICKLE_SAVE_FOLDER + "/" + TEST_NAME
     PLOT_SAVE_PATH = "." + PLOTS_SAVE_FOLDER + "/" + TEST_NAME + "/"
     data = load_data(DATA_PATH)
-    parameters = Parameters(nu=[1,1e-1,1e-2], lam_PNPD=[1e-4,1e-3,1e-2], iterations=10, k_max=[1,1,1], extrapolation=[True for i in range(3)])
+    parameters = Parameters(nu=1e-1, lam_PNPD=1e-3, lam_NPD=1e-4, iterations=10, k_max=1)
     output_data = compute(data, parameters, DATA_SAVE_PATH)
     plot(output_data, PLOT_SAVE_PATH)
-    

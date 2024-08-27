@@ -34,7 +34,8 @@ from tests.constants import *
 from tests.generate_blurred_image import DeblurProblemData
 from dataclasses import dataclass
 from utilities import save_data
-from plot_extras import TestData, plot_metrics_results
+from plot_extras import TestData, plot_metrics_results, plot_images
+import matplotlib.pyplot as plt
 
 TEST_NAME = "PNPD_comparison"
 
@@ -64,7 +65,7 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
         metrics=metrics
     )
 
-    metrics["$\|Ax-b\|_2^2 + \lambda TV(x)$"] = lambda x, ground_truth: functions.f(x) + parameters.lam_NPD * total_variation_2D(x)
+    metrics["NPD objective function"] = lambda x, ground_truth: functions.f(x) + parameters.lam_NPD * total_variation_2D(x)
 
     im_rec = {}
     metrics_results = {}
@@ -78,10 +79,10 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     print(f"lam_PNPD given: {parameters.lam_PNPD}, estimated lam_PNPD: {lam_PNPD}")
 
     methods_parameters.kMax = parameters.k_max[0]
-    method = "PNPD"
-    method += f" $\lambda={parameters.lam_PNPD}$"
+    method = "PNPD,"
+    method += f" $\\nu={parameters.nu},$"
+    method += f" $\lambda={parameters.lam_PNPD}$,"
     method += f" $k_{{max}}={methods_parameters.kMax}$"
-    method += f" $\\nu={parameters.nu}$"
     print(method)
     im_rec_tmp, metrics_results_tmp = PNPD(x1=data.blurred, parameters=methods_parameters, functions=functions)
     im_rec[method] = im_rec_tmp
@@ -89,8 +90,8 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     print("\n\n\n\n")
 
     methods_parameters.kMax = parameters.k_max[1]
-    method = "NPD"
-    method += f" $\lambda={parameters.lam_NPD}$"
+    method = "NPD,"
+    method += f" $\lambda={parameters.lam_NPD}$,"
     method += f" $k_{{max}}={methods_parameters.kMax}$"
     methods_parameters.reset()
     methods_parameters.beta = 1/8
@@ -103,10 +104,10 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     print("\n\n\n\n")
 
     methods_parameters.kMax = parameters.k_max[2]
-    method = "NPDIT_NB"
-    method += f" $\lambda={parameters.lam_NPD}$"
+    method = "NPDIT,"
+    method += f" $\\nu={parameters.nu}$,"
+    method += f" $\lambda={parameters.lam_NPD}$,"
     method += f" $k_{{max}}={methods_parameters.kMax}$"
-    method += f" $\\nu={parameters.nu}$"
     methods_parameters.reset()
     methods_parameters.beta *= parameters.nu
 
@@ -116,18 +117,18 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     metrics_results[method] = metrics_results_tmp
     print("\n\n\n\n")
 
-    methods_parameters.kMax = parameters.k_max[3]
-    method = "NPDIT"
-    method += f" $\lambda={parameters.lam_NPD}$"
-    method += f" $k_{{max}}={methods_parameters.kMax}$"
-    method += f" $\\nu={parameters.nu}$"
-    methods_parameters.reset()
+    # methods_parameters.kMax = parameters.k_max[3]
+    # method = "NPDIT"
+    # method += f" $\lambda={parameters.lam_NPD}$"
+    # method += f" $k_{{max}}={methods_parameters.kMax}$"
+    # method += f" $\\nu={parameters.nu}$"
+    # methods_parameters.reset()
 
-    print(method)
-    im_rec_tmp, metrics_results_tmp = NPDIT(x1=data.blurred, parameters=methods_parameters, functions=functions)
-    im_rec[method] = im_rec_tmp
-    metrics_results[method] = metrics_results_tmp
-    print("\n\n\n\n")
+    # print(method)
+    # im_rec_tmp, metrics_results_tmp = NPDIT(x1=data.blurred, parameters=methods_parameters, functions=functions)
+    # im_rec[method] = im_rec_tmp
+    # metrics_results[method] = metrics_results_tmp
+    # print("\n\n\n\n")
 
     output_data = TestData(im_rec=im_rec, metrics_results=metrics_results)
 
@@ -138,7 +139,24 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
 
 
 def plot(data: TestData, save_path = None):
+    of_x_hat = float("inf")
+    for method in data.metrics_results:
+        of = data.metrics_results[method]["NPD objective function"]
+        if of[-1] <  of_x_hat:
+            of_x_hat = of[-1]
+    for method in data.metrics_results:
+        of = data.metrics_results[method]["NPD objective function"]
+        of = np.abs(of-of_x_hat)/np.abs(of_x_hat)
+        data.metrics_results[method]["NPD relative objective function"] = of
     plot_metrics_results(data.metrics_results, save_path)
+    images = []
+    titles = []
+    for method, rec in data.im_rec.items():
+        images.append(rec)
+        titles.append(method)
+    plot_images(images, titles)
+    plt.savefig(save_path + "reconstructions.pdf")
+    
     
 
 if __name__ == "__main__":

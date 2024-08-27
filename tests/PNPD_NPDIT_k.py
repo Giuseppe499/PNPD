@@ -102,7 +102,7 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
 
         methods_parameters.reset()
 
-        method = "NPDIT_NB"
+        method = "NPDIT"
         method += "" if methods_parameters.extrapolation else "_NE"
         method += f", $k_{{max}}={methods_parameters.kMax}$"
 
