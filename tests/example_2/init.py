@@ -45,5 +45,13 @@ if __name__ == "__main__":
     save_path = ".." + PLOTS_SAVE_FOLDER + "/" + EXAMPLE_NAME + "/" + "problem.pdf"
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     plt.savefig(save_path)
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    plt.savefig(save_path)
+    save_path = ".." + PLOTS_SAVE_FOLDER + "/" + EXAMPLE_NAME + "/"
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    for im, name in zip((image, psf_center_crop, data.blurred),
+                         ("ground_truth", "psf", "observed")):
+        plot_images([im])
+        plt.savefig(save_path + f"problem_{name}.pdf")
 
     plt.show()
