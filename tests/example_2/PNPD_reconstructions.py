@@ -1,12 +1,12 @@
 import tests.PNPD_comparison as test
 
-parameters = test.Parameters(nu=1e-1, lam_PNPD=5e-3, lam_NPD=5e-4, iterations=151, k_max= [1,1,1,1])
+parameters = test.Parameters(nu=1e-1, lam_PNPD=5e-3, lam_NPD=5e-4, iterations=6, k_max= [1,1,1,1])
 
 def compute(*args, **kwargs):
     return test.compute(parameters=parameters, *args, *kwargs)
 
 def plot(*args, **kwargs):
-    return test.plot(*args, **kwargs)
+    return test.plot_reconstructions(*args, **kwargs)
 
 if __name__ == "__main__":
     from init import DATA_SAVE_PATH as EXAMPLE_DATA_PATH

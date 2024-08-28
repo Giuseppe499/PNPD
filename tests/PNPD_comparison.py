@@ -79,10 +79,10 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     print(f"lam_PNPD given: {parameters.lam_PNPD}, estimated lam_PNPD: {lam_PNPD}")
 
     methods_parameters.kMax = parameters.k_max[0]
-    method = "PNPD,"
-    method += f" $\\nu={parameters.nu},$"
-    method += f" $\lambda={parameters.lam_PNPD}$,"
-    method += f" $k_{{max}}={methods_parameters.kMax}$"
+    method = "PNPD"
+    # method += f" $\\nu={parameters.nu},$"
+    # method += f" $\lambda={parameters.lam_PNPD}$,"
+    # method += f" $k_{{max}}={methods_parameters.kMax}$"
     print(method)
     im_rec_tmp, metrics_results_tmp = PNPD(x1=data.blurred, parameters=methods_parameters, functions=functions)
     im_rec[method] = im_rec_tmp
@@ -90,9 +90,9 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     print("\n\n\n\n")
 
     methods_parameters.kMax = parameters.k_max[1]
-    method = "NPD,"
-    method += f" $\lambda={parameters.lam_NPD}$,"
-    method += f" $k_{{max}}={methods_parameters.kMax}$"
+    method = "NPD"
+    # method += f" $\lambda={parameters.lam_NPD}$,"
+    # method += f" $k_{{max}}={methods_parameters.kMax}$"
     methods_parameters.reset()
     methods_parameters.beta = 1/8
     functions.prox_h_star = lambda alpha, x: prox_h_star_TV(parameters.lam_NPD, x)
@@ -104,10 +104,10 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     print("\n\n\n\n")
 
     methods_parameters.kMax = parameters.k_max[2]
-    method = "NPDIT,"
-    method += f" $\\nu={parameters.nu}$,"
-    method += f" $\lambda={parameters.lam_NPD}$,"
-    method += f" $k_{{max}}={methods_parameters.kMax}$"
+    method = "NPDIT"
+    # method += f" $\\nu={parameters.nu}$,"
+    # method += f" $\lambda={parameters.lam_NPD}$,"
+    # method += f" $k_{{max}}={methods_parameters.kMax}$"
     methods_parameters.reset()
     methods_parameters.beta *= parameters.nu
 
@@ -149,13 +149,14 @@ def plot(data: TestData, save_path = None):
         of = np.abs(of-of_x_hat)/np.abs(of_x_hat)
         data.metrics_results[method]["NPD relative objective function"] = of
     plot_metrics_results(data.metrics_results, save_path)
-    images = []
-    titles = []
+    plot_reconstructions(data, save_path)
+
+
+def plot_reconstructions(data: TestData, save_path = None):
     for method, rec in data.im_rec.items():
-        images.append(rec)
-        titles.append(method)
-    plot_images(images, titles)
-    plt.savefig(save_path + "reconstructions.pdf")
+        iterations = len(data.metrics_results[method]["time"])-1
+        plot_images([rec])
+        plt.savefig(save_path + f"reconstruction_it={iterations}_{method}.pdf")
     
     
 
