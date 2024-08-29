@@ -6,7 +6,7 @@ from tests.constants import *
 
 IMAGE_PATH = "../images/cameraman.tif"
 DATA_SAVE_PATH = "." + PICKLE_SAVE_FOLDER + "/deblur_problem_data"
-EXAMPLE_NAME = "example_3"
+EXAMPLE_NAME = "example_2"
 
 if __name__ == "__main__":
 
