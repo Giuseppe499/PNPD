@@ -1,7 +1,7 @@
 import tests.PNPD_nu as test
 SUB_TEST_NAME = "PNPD"
 
-parameters = test.Parameters(iterations=150,
+parameters = test.Parameters(iterations=151,
                              nu=[1,1e-1,1e-2],
                              lam_PNPD=[3e-3,2e-2,6e-2],
                              extrapolation=[True, True, True],

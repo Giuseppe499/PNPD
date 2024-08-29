@@ -8,7 +8,7 @@ SAVE_PATH = "." + PICKLE_SAVE_FOLDER + "/" + EXAMPLE_NAME + "/" + test.TEST_NAME
 parameters = test.Parameters(
     nu=[1e-1, 5e-2, 5e-2, 5e-2],
     lam=[2e-2, 2e-3, 3e-3, 3e-3],
-    iterations=150,
+    iterations=151,
     k_max= [15,15,15,15]
     )
 

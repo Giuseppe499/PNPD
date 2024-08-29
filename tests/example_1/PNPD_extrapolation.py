@@ -1,6 +1,6 @@
 import tests.PNPD_extrapolation as test
 
-parameters = test.Parameters(nu=1e-1, lam_PNPD=1e-3, iterations=150)
+parameters = test.Parameters(nu=1e-1, lam_PNPD=1e-3, iterations=151)
 
 def compute(*args, **kwargs):
     return test.compute(parameters=parameters, *args, *kwargs)
