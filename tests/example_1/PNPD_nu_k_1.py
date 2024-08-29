@@ -3,6 +3,7 @@ from PNPD_nu import parameters
 SUB_TEST_NAME = "PNPD_k=1"
 
 parameters.k_max = [1 for nu in parameters.nu]
+parameters.k_max_in_method_name = False
 
 def compute(*args, **kwargs):
     return test.compute(parameters=parameters, *args, *kwargs)

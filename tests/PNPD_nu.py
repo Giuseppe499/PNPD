@@ -44,6 +44,7 @@ class Parameters:
     k_max: list[int]
     iterations: int = 10
     extrapolation: list[bool] = True
+    k_max_in_method_name: bool = True
 
 def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     methods_parameters = PNPD_parameters(maxIter=parameters.iterations, alpha=1, beta=1/8, kMax=None, extrapolation=parameters.extrapolation, ground_truth=data.image)
@@ -87,11 +88,13 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
         f_S = lambda x: scalar_product(res(x),functions.mulP_inv(res(x)))
         metrics["PNPD objective function"] = lambda x, ground_truth: f_S(x) + lam * total_variation_2D(x)
 
-        method = "PNPD"
-        method += "" if methods_parameters.extrapolation else "_NE"
-        method += f" $\\nu={nu}$"
+        method = ""
+        # method = "PNPD"
+        # method += "" if methods_parameters.extrapolation else "_NE"
+        method += f"$\\nu={nu}$"
         method += f", $\lambda={lam}$"
-        method += f", $k_{{max}}={methods_parameters.kMax}$"
+        if parameters.k_max_in_method_name:
+            method += f", $k_{{max}}={methods_parameters.kMax}$"
 
         print(method)
         im_rec_tmp, metrics_results_tmp = PNPD(x1=data.blurred, parameters=methods_parameters, functions=functions)
