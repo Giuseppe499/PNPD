@@ -24,7 +24,7 @@ if __name__ == "__main__":
     psf = move_psf_center(psf_centered)
 
     data = generate_blurred_image(
-        image, noisePercent=0.05, psf=psf, save_path=DATA_SAVE_PATH
+        image, noisePercent=0.02, psf=psf, save_path=DATA_SAVE_PATH
     )
 
     from matplotlib import pyplot as plt

@@ -1,6 +1,6 @@
 import tests.PNPD_comparison as test
 
-parameters = test.Parameters(nu=1e-1, lam_PNPD=2e-2, lam_NPD=3e-3, iterations=11, k_max= [15,15,15,15])
+parameters = test.Parameters(nu=1e-1, lam_PNPD=6e-3, lam_NPD=7e-4, iterations=11, k_max= [5,5,5,5])
 
 def compute(*args, **kwargs):
     return test.compute(parameters=parameters, *args, *kwargs)
