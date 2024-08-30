@@ -1,9 +1,13 @@
-import tests.PNPD_nu as test
-from PNPD_nu import parameters
-SUB_TEST_NAME = "PNPD_NE"
+import tests.PNPD_proposed as test
 
-parameters.k_max = [1 for nu in parameters.nu]
-parameters.extrapolation = [False for nu in parameters.nu]
+parameters = test.Parameters(
+    nu=[1e-2,1e-3,1e-3,3e-3],
+    lam_PNPD=[6e-3,2e-2,2e-2],
+    lam_NPD=1e-4,
+    iterations=51,
+    k_max= [2,1,2,1],
+    bootstrap_iterations=10
+    )
 
 def compute(*args, **kwargs):
     return test.compute(parameters=parameters, *args, *kwargs)
@@ -18,4 +22,4 @@ if __name__ == "__main__":
     from tests.constants import *
     data = load_data(EXAMPLE_DATA_PATH)
     test_data = compute(data)
-    plot(test_data, ".." + PLOTS_SAVE_FOLDER + "/" + EXAMPLE_NAME + "/" + test.TEST_NAME + "/" + SUB_TEST_NAME + "/")
+    plot(test_data, ".." + PLOTS_SAVE_FOLDER + "/" + EXAMPLE_NAME + "/" + test.TEST_NAME + "/")
