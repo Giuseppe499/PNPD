@@ -32,7 +32,6 @@ from tests.generate_blurred_image import DeblurProblemData
 from dataclasses import dataclass
 from utilities import save_data
 from plot_extras import TestData, plot_metrics_results
-from typing import Callable
 from schedulers import *
 
 TEST_NAME = "PNPD_non_stationary"
