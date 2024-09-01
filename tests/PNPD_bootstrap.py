@@ -85,8 +85,9 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
             )
         methods_parameters.reset()
         methods_parameters.kMax = parameters.k_max[i]
-        method = "PNPD,"
-        method += f" $n_\\text{{bt}}={bootstrap_iterations}$,"
+        method = ""
+        # method = "PNPD, "
+        method += f"$n_\\text{{bt}}={bootstrap_iterations}$,"
         method += f" $\\nu_0={parameters.nu[i]}$,"
         # method += f" $\lambda_k={parameters.lam} /\\nu_k$,"
         # method += f" $k_{{max}}={methods_parameters.kMax}$"

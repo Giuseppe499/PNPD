@@ -9,7 +9,8 @@ parameters = test.Parameters(
     nu=[1e-1, 1e-2, 1e-2, 1e-2],
     lam=[2e-3, 1e-4, 2e-4, 2e-4],
     iterations=151,
-    k_max= [3,3,3,3]
+    k_max= [3,3,3,3],
+    k_max_in_method_name=False
     )
 
 def compute(*args, **kwargs):

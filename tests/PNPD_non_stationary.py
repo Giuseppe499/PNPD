@@ -43,6 +43,7 @@ class Parameters:
     iterations: int = 10
     k_max: list[int] = None
     bootstrap_iterations = 20
+    k_max_in_method_name: bool = True
 
 def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     methods_parameters = PNPD_parameters(maxIter=parameters.iterations, alpha=1, beta=1/8, kMax=parameters.k_max, extrapolation=True, ground_truth=data.image)
@@ -70,10 +71,12 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     functions.mulP_inv_scheduler = mul_P_inv_scheduler(constant_scheduler(parameters.nu[0]), data.psfAbsSq)
 
     methods_parameters.kMax = parameters.k_max[0]
-    method = "PNPD,"
-    method += f" $\\nu={parameters.nu[0]}$,"
-    method += f" $\lambda={parameters.lam[0]}$,"
-    method += f" $k_{{max}}={methods_parameters.kMax}$"
+    method = ""
+    # method = "PNPD, "
+    method += f"$\\nu_n=\\nu={parameters.nu[0]}$,"
+    method += f" $\lambda={parameters.lam[0]}$"
+    if parameters.k_max_in_method_name:
+        method += f", $k_{{max}}={methods_parameters.kMax}$"
     print(method)
     im_rec_tmp, metrics_results_tmp = PNPD_non_stationary(x1=data.blurred, parameters=methods_parameters, functions=functions)
     im_rec[method] = im_rec_tmp
@@ -85,10 +88,13 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     functions.mulP_inv_scheduler = mul_P_inv_scheduler(nu_scheduler_classic(parameters.nu[1]), data.psfAbsSq)
     methods_parameters.reset()
     methods_parameters.kMax = parameters.k_max[1]
-    method = "PNPD,"
-    method += f" $\\nu_n=0.5 \cdot 0.85^n + {parameters.nu[1]}$,"
-    method += f" $\lambda_n={parameters.lam[1]} \cdot \|S^{{-1}}\|_2$,"
-    method += f" $k_{{max}}={methods_parameters.kMax}$"
+    method = ""
+    # method = "PNPD, "
+    method += "$\\nu_n$ in (5.18),"
+    method += f" $\\nu_\infty={parameters.nu[1]}$,"
+    method += f" $\lambda_n={parameters.lam[1]} \cdot \|S_n^{{-1}}\|_2$"
+    if parameters.k_max_in_method_name:
+        method += f", $k_{{max}}={methods_parameters.kMax}$"
     print(method)
     im_rec_tmp, metrics_results_tmp = PNPD_non_stationary(x1=data.blurred, parameters=methods_parameters, functions=functions)
     im_rec[method] = im_rec_tmp
@@ -103,10 +109,13 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
         )
     methods_parameters.reset()
     methods_parameters.kMax = parameters.k_max[2]
-    method = "PNPD,"
-    method += f" $\\nu_n=(1-\\frac{{1}}{{\\sqrt{{n+1}}}})(1-{parameters.nu[2]}) + {parameters.nu[2]}$,"
-    method += f" $\lambda_n={parameters.lam[2]} \cdot \|S^{{-1}}\|_2$,"
-    method += f" $k_{{max}}={methods_parameters.kMax}$"
+    method = ""
+    # method = "PNPD, "
+    method += "$\\nu_n$ in (5.19),"
+    method += f" $\\nu_0={parameters.nu[2]}$,"
+    method += f" $\lambda_n={parameters.lam[2]} \cdot \|S_n^{{-1}}\|_2$"
+    if parameters.k_max_in_method_name:
+        method += f", $k_{{max}}={methods_parameters.kMax}$"
     print(method)
     im_rec_tmp, metrics_results_tmp = PNPD_non_stationary(x1=data.blurred, parameters=methods_parameters, functions=functions)
     im_rec[method] = im_rec_tmp
@@ -130,10 +139,14 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
         )
     methods_parameters.reset()
     methods_parameters.kMax = parameters.k_max[3]
-    method = "PNPD"
-    method += f" $\\nu_n=\min({parameters.nu[3]}^{{-\\frac{{n-n_\\text{{bt}}}}{{n_\\text{{bt}}}}}},1)$,"
-    method += f" $\lambda_n={parameters.lam[3]} \cdot \|S^{{-1}}\|_2$,"
-    method += f" $k_{{max}}={methods_parameters.kMax}$"
+    method = ""
+    # method = "PNPD, "
+    method += "$\\nu_n$ in (5.20),"
+    method += f" $\\nu_0={parameters.nu[3]}$,"
+    method += f" $n_\\text{{bt}}={bootstrap_iterations}$"
+    method += f" $\lambda_n={parameters.lam[3]} \cdot \|S_n^{{-1}}\|_2$"
+    if parameters.k_max_in_method_name:
+        method += f", $k_{{max}}={methods_parameters.kMax}$"
     print(method)
     im_rec_tmp, metrics_results_tmp = PNPD_non_stationary(x1=data.blurred, parameters=methods_parameters, functions=functions)
     im_rec[method] = im_rec_tmp

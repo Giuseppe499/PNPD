@@ -6,10 +6,10 @@ from tests.constants import *
 SAVE_PATH = "." + PICKLE_SAVE_FOLDER + "/" + EXAMPLE_NAME + "/" + test.TEST_NAME
 
 parameters = test.Parameters(
-    nu=[1e-2, 1e-1, 1e-3, 1e-4, 1e-2, 1e-2],
+    nu=[1e-2, 1e-1, 1e-3, 1e-2, 1e-2],
     lam=2e-4,
     iterations=151,
-    bootstrap_iterations=[20,20,20,20,5,50],
+    bootstrap_iterations=[20,20,20,5,50],
     k_max= None
     )
 parameters.k_max = [3] * len(parameters.nu)
