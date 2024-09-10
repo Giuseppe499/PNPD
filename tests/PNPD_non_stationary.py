@@ -90,7 +90,7 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     methods_parameters.kMax = parameters.k_max[1]
     method = ""
     # method = "PNPD, "
-    method += "$\\nu_n$ in (5.18),"
+    method += "$\\nu_n$ in (41),"
     method += f" $\\nu_\infty={parameters.nu[1]}$,"
     method += f" $\lambda_n={parameters.lam[1]} \cdot \|S_n^{{-1}}\|_2$"
     if parameters.k_max_in_method_name:
@@ -111,7 +111,7 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     methods_parameters.kMax = parameters.k_max[2]
     method = ""
     # method = "PNPD, "
-    method += "$\\nu_n$ in (5.19),"
+    method += "$\\nu_n$ in (42),"
     method += f" $\\nu_0={parameters.nu[2]}$,"
     method += f" $\lambda_n={parameters.lam[2]} \cdot \|S_n^{{-1}}\|_2$"
     if parameters.k_max_in_method_name:
@@ -141,7 +141,7 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     methods_parameters.kMax = parameters.k_max[3]
     method = ""
     # method = "PNPD, "
-    method += "$\\nu_n$ in (5.20),"
+    method += "$\\nu_n$ in (43),"
     method += f" $\\nu_0={parameters.nu[3]}$,"
     method += f" $n_\\text{{bt}}={bootstrap_iterations}$"
     method += f" $\lambda_n={parameters.lam[3]} \cdot \|S_n^{{-1}}\|_2$"

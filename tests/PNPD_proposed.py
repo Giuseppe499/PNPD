@@ -147,12 +147,12 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     )
 
     method = ""
-    method = "PNPD, "
-    method += f"$\\nu_n=(5.20)$,"
-    method += f"$\\nu_0={parameters.nu[3]}$,"
-    method += f" $\lambda_n={parameters.lam_NPD} \cdot \|S^{{-1}}_n\|_2$,"
-    method += f" $k_{{max}}={parameters.k_max[3]}$,"
-    method += f" $n_{{\\text{{bt}}}}={parameters.bootstrap_iterations}$"
+    method = "PNPD_BT,"
+    # method += f" $\\nu_n$ in (5.20),"
+    method += f" $\\nu_0={parameters.nu[3]}$,"
+    method += f" $n_{{\\text{{bt}}}}={parameters.bootstrap_iterations}$,"
+    method += f" $\hat\lambda={parameters.lam_NPD}$,"
+    method += f" $k_{{max}}={parameters.k_max[3]}$"
     print(method)
 
     # Set method parameters
