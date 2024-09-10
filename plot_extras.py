@@ -102,6 +102,8 @@ def plot_images(images: list, titles: list = None, shape = None, cmap="gray"):
     for i in range(shape[0]):
         for j in range(shape[1]):
             axs[i,j].imshow(images[i*shape[0]+j], cmap=cmap, vmin=0, vmax=1)
+            axs[i,j].xaxis.get_major_locator().set_params(integer=True)
+            axs[i,j].yaxis.get_major_locator().set_params(integer=True)
             axs[i,j].set_title(titles[i*shape[0]+j])
     plt.tight_layout()
     
