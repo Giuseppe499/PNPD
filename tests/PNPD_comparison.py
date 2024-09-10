@@ -48,7 +48,7 @@ class Parameters:
     k_max: list[int] = None
 
 def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
-    methods_parameters = NPDIT_parameters(maxIter=parameters.iterations, alpha=1, beta=1/8, kMax=parameters.k_max, extrapolation=True, ground_truth=data.image)
+    methods_parameters = NPDIT_parameters(maxIter=parameters.iterations, alpha=1, beta=.99/8, kMax=parameters.k_max, extrapolation=True, ground_truth=data.image)
 
     metrics = image_metrics()
 
@@ -94,7 +94,7 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
     # method += f" $\lambda={parameters.lam_NPD}$,"
     # method += f" $k_{{max}}={methods_parameters.kMax}$"
     methods_parameters.reset()
-    methods_parameters.beta = 1/8
+    methods_parameters.beta = .99/8
     functions.prox_h_star = lambda alpha, x: prox_h_star_TV(parameters.lam_NPD, x)
 
     print(method)

@@ -46,7 +46,7 @@ class Parameters:
     bootstrap_iterations: list[int] = None
 
 def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
-    methods_parameters = PNPD_parameters(maxIter=parameters.iterations, alpha=1, beta=1/8, kMax=parameters.k_max, extrapolation=True, ground_truth=data.image)
+    methods_parameters = PNPD_parameters(maxIter=parameters.iterations, alpha=1, beta=.99/8, kMax=parameters.k_max, extrapolation=True, ground_truth=data.image)
 
     metrics = image_metrics()
     

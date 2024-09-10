@@ -74,7 +74,7 @@ def compute(data: DeblurProblemData, parameters: Parameters, save_path = None):
         methods_parameters.reset()
 
         # Update beta
-        methods_parameters.beta = 1/8
+        methods_parameters.beta = .99/8
 
         # Update k_{max}
         methods_parameters.kMax = k_max
