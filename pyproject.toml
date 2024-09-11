@@ -1,0 +1,25 @@
+[project]
+name = "PNPD"
+version = "1.0"
+dependencies = [
+  "matplotlib",
+  "numpy",
+  "pandas",
+  "pillow",
+  "scikit-image",
+  "scipy",
+  "tabulate"
+]
+requires-python = ">= 3.8"
+authors = [
+  {name = "Giuseppe Scarlato", email = "gscarlato@uninsubria.it"}
+]
+description = "PNPD (Preconditioned Nested Primal-Dual)"
+readme = "README.md"
+license = {file = "LICENSE"}
+
+[project.optional-dependencies]
+gui = ["PyQt5"]
+
+[project.urls]
+Repository = "https://github.com/Giuseppe499/PNPD"
