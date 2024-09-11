@@ -2,7 +2,8 @@
 
 ## How to run examples
 
-1. (Optional, recommended) Create a virtual environment (see [python docs](https://docs.python.org/3/library/venv.html))
+1. (Optional, recommended) Create a virtual environment and activate it
+   (see [python docs](https://docs.python.org/3/library/venv.html))
 2. Install requirements with `pip install .`
 3. Move to an example folder e.g.:  
 
