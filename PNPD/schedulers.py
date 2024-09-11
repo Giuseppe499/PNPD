@@ -1,5 +1,5 @@
 import numpy as np
-from math_extras import multiply_P_inverse, prox_h_star_TV
+from .math_extras import multiply_P_inverse, prox_h_star_TV
 from typing import Callable
 
 def nu_scheduler_classic(nu: float):

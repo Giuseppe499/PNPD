@@ -17,8 +17,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from context import PNPD
+
 import numpy as np
-from math_extras import (
+from PNPD.math_extras import (
     gradient_convolution_least_squares,
     gradient_2D_signal,
     divergence_2D_signal,
@@ -28,12 +30,12 @@ from math_extras import (
     total_variation_2D,
     convolve_2D_fft
 )
-from solvers import PNPD, PNPD_parameters, PNPD_functions, image_metrics
-from tests.constants import *
-from tests.generate_blurred_image import DeblurProblemData
+from PNPD.solvers import PNPD, PNPD_parameters, PNPD_functions, image_metrics
+from examples.constants import *
+from examples.generate_blurred_image import DeblurProblemData
 from dataclasses import dataclass
-from utilities import save_data
-from plot_extras import TestData, plot_metrics_results
+from PNPD.utilities import save_data
+from PNPD.plot_extras import TestData, plot_metrics_results
 
 TEST_NAME = "PNPD_nu"
 
@@ -117,16 +119,3 @@ def plot(data: TestData, save_path = None):
         of = np.abs(of-of_x_hat)/np.abs(of_x_hat)
         data.metrics_results[method]["PNPD relative objective function"] = of
     plot_metrics_results(data.metrics_results, save_path)
-
-if __name__ == "__main__":
-    from utilities import load_data
-
-    # Load data (generated with generateBlurredImage.py)
-    DATA_PATH = "." + PICKLE_SAVE_FOLDER + "/Blurred"
-    DATA_SAVE_PATH = "." + PICKLE_SAVE_FOLDER + "/" + TEST_NAME
-    PLOT_SAVE_PATH = "." + PLOTS_SAVE_FOLDER + "/" + TEST_NAME + "/"
-    data = load_data(DATA_PATH)
-    parameters = Parameters(nu=[1,1e-1,1e-2], lam_PNPD=[1e-4,1e-3,1e-2], iterations=10, k_max=[1,1,1], extrapolation=[True for i in range(3)])
-    output_data = compute(data, parameters, DATA_SAVE_PATH)
-    plot(output_data, PLOT_SAVE_PATH)
-    

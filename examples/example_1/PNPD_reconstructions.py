@@ -1,7 +1,9 @@
-import tests.PNPD_comparison as test
+from context import PNPD, examples
+
+from examples import PNPD_comparison as test
 from init import DATA_SAVE_PATH as EXAMPLE_DATA_PATH
 from init import EXAMPLE_NAME
-from tests.constants import *
+from examples.constants import *
 
 SAVE_PATH = "." + PICKLE_SAVE_FOLDER + "/" + EXAMPLE_NAME + "/" + test.TEST_NAME
 
@@ -14,7 +16,7 @@ def plot(*args, **kwargs):
     return test.plot_reconstructions(*args, **kwargs)
 
 if __name__ == "__main__":
-    from utilities import load_data
+    from PNPD.utilities import load_data
     
     PICKLE_SAVE_FOLDER + "/" + EXAMPLE_NAME + "/" + test.TEST_NAME
     data = load_data(EXAMPLE_DATA_PATH)

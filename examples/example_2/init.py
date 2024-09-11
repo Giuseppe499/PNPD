@@ -1,8 +1,10 @@
+from context import PNPD, examples
+
 from PIL import Image
 import numpy as np
-from math_extras import generate_gaussian_PSF, move_psf_center
-from tests.generate_blurred_image import generate_blurred_image
-from tests.constants import *
+from PNPD.math_extras import generate_gaussian_PSF, move_psf_center
+from examples.generate_blurred_image import generate_blurred_image
+from examples.constants import *
 
 IMAGE_PATH = "../images/cameraman.tif"
 DATA_SAVE_PATH = "." + PICKLE_SAVE_FOLDER + "/deblur_problem_data"
@@ -28,8 +30,8 @@ if __name__ == "__main__":
     )
 
     from matplotlib import pyplot as plt
-    from plot_extras import plot_images
-    from math_extras import center_crop
+    from PNPD.plot_extras import plot_images
+    from PNPD.math_extras import center_crop
     import os
     psf_center_crop = center_crop(psf_centered, (20,20)) / psf_centered.max()
     plot_images(

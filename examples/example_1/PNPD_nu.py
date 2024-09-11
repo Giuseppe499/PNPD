@@ -1,4 +1,6 @@
-import tests.PNPD_nu as test
+from context import PNPD, examples
+
+from examples import PNPD_nu as test
 SUB_TEST_NAME = "PNPD"
 
 parameters = test.Parameters(iterations=81,
@@ -16,8 +18,8 @@ def plot(*args, **kwargs):
 if __name__ == "__main__":
     from init import DATA_SAVE_PATH as EXAMPLE_DATA_PATH
     from init import EXAMPLE_NAME
-    from utilities import load_data
-    from tests.constants import *
+    from PNPD.utilities import load_data
+    from examples.constants import *
     from matplotlib import pyplot as plt
     data = load_data(EXAMPLE_DATA_PATH)
     test_data = compute(data)

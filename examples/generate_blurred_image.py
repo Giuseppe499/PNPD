@@ -17,12 +17,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from context import PNPD
+
 from PIL import Image
 import numpy as np
 from numpy.fft import fft2
-from math_extras import convolve_2D_fft, generate_gaussian_PSF, generate_out_of_focus_PSF, scalar_product
+from PNPD.math_extras import convolve_2D_fft, generate_gaussian_PSF, generate_out_of_focus_PSF, scalar_product
 from dataclasses import dataclass
-from utilities import save_data
+from PNPD.utilities import save_data
 
 @dataclass
 class DeblurProblemData:
@@ -66,49 +68,3 @@ def generate_blurred_image(image, noisePercent, psf, save_path=None) -> DeblurPr
 
     return data
 
-# Usage example
-if __name__ == "__main__":
-    RGB = False
-
-    if not RGB:
-        IMGPATH = "./images/cameraman.tif"
-    else:
-        IMGPATH = "./images/peppers.tiff"
-
-    np.random.seed(42)
-
-    image = Image.open(IMGPATH)
-    image = np.asarray(image) / 255
-    image = image[::2, ::2]
-
-    n = image.shape[0]
-    print(f"Image size: {image.shape}")
-
-    # Generate PSF
-    if not RGB:
-        psfCentered = generate_gaussian_PSF(n, 2)
-    else:
-        psfCentered = np.stack([psfCentered for i in range(3)], axis=-1)
-        psfCentered[..., 0] = generate_out_of_focus_PSF(n, 1)
-        psfCentered[..., 1] = generate_out_of_focus_PSF(n, 6)
-        psfCentered[..., 2] = generate_out_of_focus_PSF(n, 10)
-        print(f"PSF size: {psfCentered.shape}")
-
-    # Move PSF center to the top-left corner
-    psf = np.roll(
-        psfCentered,
-        (-psfCentered.shape[0] // 2, -psfCentered.shape[0] // 2),
-        axis=(0, 1),
-    )
-
-    blurred = generate_blurred_image(
-        image, noisePercent=0.01, psf=psf, save_path="./pickle/Blurred"
-    ).blurred
-
-    plot = True
-    if plot:
-        import matplotlib.pyplot as plt
-        from plot_extras import plot_image_psf_blurred
-
-        plot_image_psf_blurred(image, psf, blurred)
-        plt.show()

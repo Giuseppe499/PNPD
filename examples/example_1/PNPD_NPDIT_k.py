@@ -1,4 +1,6 @@
-import tests.PNPD_NPDIT_k as test
+from context import PNPD, examples
+
+from examples import PNPD_NPDIT_k as test
 from PNPD_comparison import parameters as PNPD_comparison_parameters
 from numpy import mean
 
@@ -35,8 +37,8 @@ def delta_table(data: test.TestData):
 if __name__ == "__main__":
     from init import DATA_SAVE_PATH as EXAMPLE_DATA_PATH
     from init import EXAMPLE_NAME
-    from utilities import load_data
-    from tests.constants import *
+    from PNPD.utilities import load_data
+    from examples.constants import *
     from tabulate import tabulate
     import numpy as np
     import os

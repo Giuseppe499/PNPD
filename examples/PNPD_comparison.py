@@ -17,8 +17,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from context import PNPD
+
 import numpy as np
-from math_extras import (
+from PNPD.math_extras import (
     gradient_convolution_least_squares,
     gradient_2D_signal,
     divergence_2D_signal,
@@ -29,12 +31,12 @@ from math_extras import (
     convolve_2D_fft,
     total_variation_2D
 )
-from solvers import PNPD, NPD, NPDIT, NPDIT_no_backtracking, NPDIT_parameters, NPDIT_functions, image_metrics
-from tests.constants import *
-from tests.generate_blurred_image import DeblurProblemData
+from PNPD.solvers import PNPD, NPD, NPDIT, NPDIT_no_backtracking, NPDIT_parameters, NPDIT_functions, image_metrics
+from examples.constants import *
+from examples.generate_blurred_image import DeblurProblemData
 from dataclasses import dataclass
-from utilities import save_data
-from plot_extras import TestData, plot_metrics_results, plot_images
+from PNPD.utilities import save_data
+from PNPD.plot_extras import TestData, plot_metrics_results, plot_images
 import matplotlib.pyplot as plt
 
 TEST_NAME = "PNPD_comparison"
@@ -157,18 +159,3 @@ def plot_reconstructions(data: TestData, save_path = None):
         iterations = len(data.metrics_results[method]["time"])-1
         plot_images([rec])
         plt.savefig(save_path + f"reconstruction_it={iterations}_{method}.pdf")
-    
-    
-
-if __name__ == "__main__":
-    from utilities import load_data
-
-    # Load data (generated with generateBlurredImage.py)
-    DATA_PATH = "." + PICKLE_SAVE_FOLDER + "/Blurred"
-    DATA_SAVE_PATH = "." + PICKLE_SAVE_FOLDER + "/" + TEST_NAME
-    PLOT_SAVE_PATH = "." + PLOTS_SAVE_FOLDER + "/" + TEST_NAME + "/"
-    data = load_data(DATA_PATH)
-    parameters = Parameters(nu=1e-1, lam_PNPD=1e-3, lam_NPD=1e-4, iterations=10, k_max=1)
-    output_data = compute(data, parameters, DATA_SAVE_PATH)
-    plot(output_data, PLOT_SAVE_PATH)
-    

@@ -23,7 +23,7 @@ import numpy as np
 from numpy.linalg import norm
 from numpy.fft import fft2, ifft2
 from skimage.metrics import structural_similarity as ssim
-from math_extras import scalar_product
+from .math_extras import scalar_product
 from dataclasses import dataclass
 
 import time
